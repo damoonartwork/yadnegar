@@ -38,6 +38,8 @@ export interface Settings {
   sound: boolean;
   /** متن یادداشت سریع */
   quickNote: string;
+  /** منطقهٔ زمانی کارت ساعت میلادی (IANA) */
+  worldZone: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -52,6 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   windowsNotification: true,
   sound: true,
   quickNote: "",
+  worldZone: "America/New_York",
 };
 
 export interface AppData {

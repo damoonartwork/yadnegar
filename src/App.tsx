@@ -102,7 +102,11 @@ export default function App() {
       <main className="grid min-h-0 flex-1 grid-cols-[340px_1fr] grid-rows-[156px_88px_auto_minmax(0,1fr)] gap-5 px-6 pt-2 pb-6">
         <ClockCard tasks={tasks} className="col-start-1 row-start-1 h-full" />
         <UpcomingStrip tasks={tasks} onPick={pickDate} className="col-start-2 row-start-1 h-full min-w-0" />
-        <GregorianCard className="col-start-1 row-start-2 h-full" />
+        <GregorianCard
+          className="col-start-1 row-start-2 h-full"
+          zone={store.settings.worldZone}
+          onZoneChange={(z) => store.setSettings((s) => ({ ...s, worldZone: z }))}
+        />
 
         <Glass className="col-start-1 row-start-3" contentClassName="p-4">
           <GlassCalendar
