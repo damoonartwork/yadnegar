@@ -1,7 +1,7 @@
 {
   "name": "yadnegar",
   "productName": "Yadnegar",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "یادنگار — لیست کارها با تقویم شمسی و یادآور",
   "main": "electron/main.cjs",
   "author": "Damoon",
@@ -20,7 +20,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-jalali": "^4.1.0-0",
-    "electron-updater": "^6.8.11",
     "lucide-react": "^0.460.0",
     "motion": "^12.0.0",
     "react": "^18.3.1",

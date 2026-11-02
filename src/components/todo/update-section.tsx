@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 /** پیام خطای قابل فهم برای کاربر */
 function explainError(message?: string) {
   const m = message ?? "";
-  if (/ACCESS_DENIED|EACCES|blocked/i.test(m))
+  if (/ACCESS_DENIED|EACCES|EPERM|blocked/i.test(m))
     return "آنتی‌ویروس، فایروال یا فیلترشکن اجازهٔ اتصال به یادنگار نمی‌دهد. یادنگار را در لیست مجاز آن برنامه قرار بده، یا نسخهٔ جدید را دستی دانلود کن.";
-  if (/TIMED_OUT|ETIMEDOUT|CONNECTION_(RESET|CLOSED|REFUSED)|NAME_NOT_RESOLVED|INTERNET_DISCONNECTED|PROXY/i.test(m))
+  if (/TIMED_OUT|ETIMEDOUT|timeout|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|CONNECTION_|NAME_NOT_RESOLVED|INTERNET_DISCONNECTED|PROXY|HTTP \d/i.test(m))
     return "به GitHub وصل نشد. اینترنت یا فیلترشکن را بررسی کن، یا نسخهٔ جدید را دستی دانلود کن.";
   return "بررسی به‌روزرسانی ناموفق بود. می‌توانی نسخهٔ جدید را دستی دانلود کنی.";
 }

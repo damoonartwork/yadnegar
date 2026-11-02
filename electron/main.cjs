@@ -1,7 +1,8 @@
 // فرآیند اصلی Electron — پنجره، System Tray، ذخیره‌سازی و یادآورها
-const { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, shell, screen } = require("electron");
+const { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, shell, screen, session } = require("electron");
 const path = require("node:path");
-const { autoUpdater } = require("electron-updater");
+const { spawn } = require("node:child_process");
+const updater = require("./updater.cjs");
 const fs = require("node:fs");
 
 const APP_ID = "ir.yadnegar.app";
@@ -301,51 +302,86 @@ function sendUpdate(patch) {
   if (win && !win.isDestroyed()) win.webContents.send("update-status", updateState);
 }
 
-function setupUpdater() {
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
-  autoUpdater.on("checking-for-update", () => sendUpdate({ state: "checking", message: undefined }));
-  autoUpdater.on("update-available", (info) => sendUpdate({ state: "available", version: info.version }));
-  autoUpdater.on("update-not-available", () => sendUpdate({ state: "none" }));
-  autoUpdater.on("download-progress", (p) => sendUpdate({ state: "downloading", percent: Math.round(p.percent) }));
-  autoUpdater.on("update-downloaded", (info) => sendUpdate({ state: "ready", version: info.version, percent: 100 }));
-  autoUpdater.on("error", (err) => sendUpdate({ state: "error", message: String((err && err.message) || err).slice(0, 300) }));
+/** پروکسی تنظیم‌شده در ویندوز (مثلاً فیلترشکن) برای آدرس GitHub */
+async function systemProxyRule() {
+  try {
+    return await session.defaultSession.resolveProxy("https://github.com");
+  } catch {
+    return "DIRECT";
+  }
 }
 
 /** فقط نسخهٔ نصبی می‌تواند خودش را به‌روز کند (نه حالت توسعه و نه پرتابل) */
 function canUpdate() {
+  if (process.env.YADNEGAR_TEST_VERSION) return true; // فقط برای آزمایش
   return app.isPackaged && !process.env.PORTABLE_EXECUTABLE_FILE;
 }
+const currentVersion = () => process.env.YADNEGAR_TEST_VERSION || app.getVersion();
+
+let latestInfo = null;
+let installerPath = null;
+let busy = false;
 
 async function checkForUpdates() {
   if (!canUpdate()) {
     sendUpdate({ state: "unsupported" });
     return updateState;
   }
+  if (busy || updateState.state === "ready") return updateState;
+  busy = true;
+  sendUpdate({ state: "checking", message: undefined });
   try {
-    await autoUpdater.checkForUpdates();
+    const info = await updater.checkLatest({ proxyRule: await systemProxyRule() });
+    if (updater.isNewer(info.version, currentVersion())) {
+      latestInfo = info;
+      sendUpdate({ state: "available", version: info.version });
+    } else {
+      sendUpdate({ state: "none" });
+    }
   } catch (e) {
     sendUpdate({ state: "error", message: String((e && e.message) || e).slice(0, 300) });
+  } finally {
+    busy = false;
   }
   return updateState;
 }
 
-ipcMain.handle("app-version", () => app.getVersion());
-ipcMain.handle("update-get", () => updateState);
-ipcMain.handle("update-check", () => checkForUpdates());
-ipcMain.handle("update-download", async () => {
+async function downloadUpdate() {
+  if (!latestInfo || busy) return;
+  busy = true;
+  sendUpdate({ state: "downloading", percent: 0 });
   try {
-    sendUpdate({ state: "downloading", percent: 0 });
-    await autoUpdater.downloadUpdate();
+    const dir = path.join(app.getPath("temp"), "yadnegar-update");
+    installerPath = await updater.download(latestInfo, dir, {
+      proxyRule: await systemProxyRule(),
+      onProgress: (pct) => sendUpdate({ state: "downloading", percent: pct }),
+    });
+    sendUpdate({ state: "ready", version: latestInfo.version, percent: 100 });
   } catch (e) {
     sendUpdate({ state: "error", message: String((e && e.message) || e).slice(0, 300) });
+  } finally {
+    busy = false;
   }
-});
-ipcMain.on("open-releases", () => shell.openExternal("https://github.com/damoonartwork/yadnegar/releases/latest"));
-ipcMain.on("update-install", () => {
+}
+
+/** نصب بی‌صدا و اجرای دوبارهٔ برنامه بعد از نصب */
+function installUpdate() {
+  if (!installerPath || !fs.existsSync(installerPath)) return;
   quitting = true;
-  autoUpdater.quitAndInstall(true, true); // نصب بی‌صدا و اجرای دوباره
-});
+  const child = spawn(installerPath, ["/S", "--updated", "--force-run"], {
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
+  app.quit();
+}
+
+ipcMain.handle("app-version", () => currentVersion());
+ipcMain.handle("update-get", () => updateState);
+ipcMain.handle("update-check", () => checkForUpdates());
+ipcMain.handle("update-download", () => downloadUpdate());
+ipcMain.on("open-releases", () => shell.openExternal("https://github.com/damoonartwork/yadnegar/releases/latest"));
+ipcMain.on("update-install", installUpdate);
 
 // ---------- IPC ----------
 ipcMain.handle("load", () => data);
@@ -380,6 +416,9 @@ ipcMain.on("test-notification", () => {
 ipcMain.on("open-notification-settings", () => shell.openExternal("ms-settings:notifications"));
 ipcMain.on("reminder-action", (_e, { id, action }) => applyReminderAction(id, action));
 
+// بعضی آنتی‌ویروس‌ها و فیلترشکن‌ها پردازهٔ شبکهٔ محدودشدهٔ کرومیوم را مسدود می‌کنند
+app.commandLine.appendSwitch("disable-features", "NetworkServiceSandbox");
+
 // ---------- چرخهٔ عمر ----------
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -396,7 +435,6 @@ if (!app.requestSingleInstanceLock()) {
     createTray();
     checkReminders();
     setInterval(checkReminders, CHECK_EVERY_MS);
-    setupUpdater();
     // بررسی بی‌صدا چند ثانیه بعد از اجرا و سپس هر ۶ ساعت
     setTimeout(() => canUpdate() && checkForUpdates(), 8000);
     setInterval(() => canUpdate() && checkForUpdates(), 6 * 60 * 60 * 1000);
