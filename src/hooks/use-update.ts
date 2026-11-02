@@ -21,5 +21,6 @@ export function useUpdate() {
     check: () => api?.checkUpdate?.(),
     download: () => api?.downloadUpdate?.(),
     install: () => api?.installUpdate?.(),
+    openReleases: () => api?.openReleases?.(),
   };
 }

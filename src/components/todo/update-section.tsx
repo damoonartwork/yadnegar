@@ -1,7 +1,17 @@
-import { Download, RefreshCw, Rocket } from "lucide-react";
+import { Download, ExternalLink, RefreshCw, Rocket } from "lucide-react";
 import { useUpdate } from "@/hooks/use-update";
 import { toFa } from "@/lib/jalali";
 import { cn } from "@/lib/utils";
+
+/** پیام خطای قابل فهم برای کاربر */
+function explainError(message?: string) {
+  const m = message ?? "";
+  if (/ACCESS_DENIED|EACCES|blocked/i.test(m))
+    return "آنتی‌ویروس، فایروال یا فیلترشکن اجازهٔ اتصال به یادنگار نمی‌دهد. یادنگار را در لیست مجاز آن برنامه قرار بده، یا نسخهٔ جدید را دستی دانلود کن.";
+  if (/TIMED_OUT|ETIMEDOUT|CONNECTION_(RESET|CLOSED|REFUSED)|NAME_NOT_RESOLVED|INTERNET_DISCONNECTED|PROXY/i.test(m))
+    return "به GitHub وصل نشد. اینترنت یا فیلترشکن را بررسی کن، یا نسخهٔ جدید را دستی دانلود کن.";
+  return "بررسی به‌روزرسانی ناموفق بود. می‌توانی نسخهٔ جدید را دستی دانلود کنی.";
+}
 
 export function UpdateSection() {
   const u = useUpdate();
@@ -15,7 +25,7 @@ export function UpdateSection() {
     available: `نسخهٔ ${toFa(version ?? "")} آماده دانلود است.`,
     downloading: `در حال دانلود… ${toFa(percent ?? 0)}٪`,
     ready: `نسخهٔ ${toFa(version ?? "")} دانلود شد. با یک کلیک نصب می‌شود.`,
-    error: "بررسی به‌روزرسانی ناموفق بود. اتصال اینترنت را چک کن.",
+    error: explainError(message),
     unsupported: "به‌روزرسانی خودکار فقط در نسخهٔ نصبی کار می‌کند.",
   };
 
@@ -59,6 +69,15 @@ export function UpdateSection() {
         >
           <RefreshCw className={cn("h-4 w-4", state === "checking" && "animate-spin")} />
           بررسی به‌روزرسانی
+        </button>
+      )}
+      {state === "error" && (
+        <button
+          onClick={u.openReleases}
+          className="flex w-full items-center justify-center gap-2 py-1 text-xs font-semibold text-white/60 hover:text-white"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          دانلود دستی آخرین نسخه از GitHub
         </button>
       )}
     </div>

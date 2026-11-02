@@ -341,6 +341,7 @@ ipcMain.handle("update-download", async () => {
     sendUpdate({ state: "error", message: String((e && e.message) || e).slice(0, 300) });
   }
 });
+ipcMain.on("open-releases", () => shell.openExternal("https://github.com/damoonartwork/yadnegar/releases/latest"));
 ipcMain.on("update-install", () => {
   quitting = true;
   autoUpdater.quitAndInstall(true, true); // نصب بی‌صدا و اجرای دوباره

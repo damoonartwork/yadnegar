@@ -26,5 +26,6 @@ contextBridge.exposeInMainWorld("yadnegar", {
   checkUpdate: () => ipcRenderer.invoke("update-check"),
   downloadUpdate: () => ipcRenderer.invoke("update-download"),
   installUpdate: () => ipcRenderer.send("update-install"),
+  openReleases: () => ipcRenderer.send("open-releases"),
   onUpdateStatus: (cb) => listen("update-status", cb),
 });

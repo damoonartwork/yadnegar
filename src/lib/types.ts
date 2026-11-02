@@ -92,6 +92,7 @@ export interface YadnegarAPI {
   checkUpdate?(): Promise<UpdateStatus>;
   downloadUpdate?(): Promise<void>;
   installUpdate?(): void;
+  openReleases?(): void;
   onUpdateStatus?(cb: (s: UpdateStatus) => void): () => void;
 }
 
