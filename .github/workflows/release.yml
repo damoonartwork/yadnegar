@@ -1,11 +1,12 @@
 # ساخت خودکار نصب‌کنندهٔ ویندوز و انتشار در GitHub Releases
-# برای نسخهٔ جدید: نسخهٔ package.json را بالا ببر، سپس یک تگ مثل v1.4.0 بساز و push کن.
+# با هر push به main اجرا می‌شود. اگر شمارهٔ version در package.json جدید باشد،
+# electron-builder خودش تگ vX.Y.Z و Release را می‌سازد؛ اگر آن نسخه قبلاً منتشر شده باشد، فقط رد می‌شود.
 name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
