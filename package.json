@@ -1,0 +1,91 @@
+{
+  "name": "yadnegar",
+  "productName": "Yadnegar",
+  "version": "1.4.0",
+  "description": "یادنگار — لیست کارها با تقویم شمسی و یادآور",
+  "main": "electron/main.cjs",
+  "author": "Damoon",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "start": "vite build && electron .",
+    "dist": "vite build && electron-builder --win nsis",
+    "dist:portable": "vite build && electron-builder --win portable",
+    "release": "vite build && electron-builder --win nsis --publish always"
+  },
+  "dependencies": {
+    "@fontsource-variable/vazirmatn": "^5.1.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "date-fns-jalali": "^4.1.0-0",
+    "electron-updater": "^6.8.11",
+    "lucide-react": "^0.460.0",
+    "motion": "^12.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "pe-library": "^2.0.1",
+    "resedit": "^3.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0"
+  },
+  "build": {
+    "appId": "ir.yadnegar.app",
+    "productName": "Yadnegar",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "build/icon.png",
+      "build/tray.png"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis"
+      ],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "یادنگار",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Yadnegar-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Yadnegar-Portable-${version}.exe"
+    },
+    "afterPack": "build/after-pack.cjs",
+    "compression": "maximum",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "damoonartwork",
+        "repo": "yadnegar",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/damoonartwork/yadnegar.git"
+  }
+}

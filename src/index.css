@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn Variable", "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* مقادیر شیشه از تنظیمات برنامه روی :root تنظیم می‌شوند */
+:root {
+  --g-blur: 24px;
+  --g-tint: 0.06;
+  --g-edge: 0.35;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: white;
+  background-color: #0a0a0a;
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+/* نوار بالای پنجره قابل کشیدن باشد */
+.drag { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { scrollbar-width: none; }
+
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 9999px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* متن با درخشش خیلی ملایم، مثل نوشته‌های دکمه‌های عکس دوم */
+.glow-text { text-shadow: 0 0 18px rgba(255, 255, 255, 0.18); }
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+/* ---------- شیشهٔ مایع قابل تنظیم ---------- */
+.yg-glass {
+  background-color: rgb(255 255 255 / var(--g-tint));
+}
+.yg-glass [data-layer="bend"] {
+  -webkit-backdrop-filter: blur(var(--g-blur)) saturate(160%);
+  backdrop-filter: blur(var(--g-blur)) saturate(160%);
+}
+.yg-glass [data-layer="edge"] {
+  box-shadow:
+    inset 1px 1px 1px 0 rgb(255 255 255 / var(--g-edge)),
+    inset -1px -1px 1px 0 rgb(255 255 255 / calc(var(--g-edge) * 0.55)) !important;
+}
+
+/* ---------- پس‌زمینه‌ها ---------- */
+.yg-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #0a0a0a; }
+.yg-bg .dots {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1.2px);
+  background-size: 26px 26px;
+  background-position: 13px 13px;
+}
+.yg-bg .blob { position: absolute; border-radius: 9999px; filter: blur(90px); animation: yg-drift 30s ease-in-out infinite alternate; }
+.yg-bg .blob:nth-child(3) { animation-duration: 38s; animation-direction: alternate-reverse; }
+.yg-bg .blob:nth-child(4) { animation-duration: 46s; }
+@keyframes yg-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(-60px, 50px) scale(1.12); }
+}
+.yg-bg .dim { position: absolute; inset: 0; background: #000; pointer-events: none; }
+
+/* اسلایدر تنظیمات (راست‌به‌چپ: پر شدن از سمت راست) */
+.yg-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to left, #fff var(--pct), rgba(255, 255, 255, 0.15) var(--pct));
+  outline: none;
+  cursor: pointer;
+}
+.yg-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12), 0 0 14px rgba(255, 255, 255, 0.4);
+}
