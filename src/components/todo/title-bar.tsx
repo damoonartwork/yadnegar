@@ -18,7 +18,7 @@ export function TitleBar({ onSettings }: { onSettings?: () => void }) {
   return (
     <div className="drag flex h-9 shrink-0 items-center justify-between pr-4">
       <div className="flex items-center gap-2 text-[13px] font-bold text-white/75">
-        <span className="h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]" />
+        <img src="./logo.png" alt="" className="h-5 w-5 rounded-[5px]" draggable={false} />
         یادنگار
       </div>
       <div className="no-drag flex items-center">

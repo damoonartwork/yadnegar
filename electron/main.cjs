@@ -61,7 +61,9 @@ function broadcastTasks() {
 function prepareIcon() {
   try {
     const target = path.join(app.getPath("userData"), "notify-icon.png");
-    if (!fs.existsSync(target)) fs.writeFileSync(target, fs.readFileSync(ICON_ASAR));
+    const icon = fs.readFileSync(ICON_ASAR);
+    // اگر آیکن برنامه عوض شده باشد، نسخهٔ روی دیسک هم به‌روز شود
+    if (!fs.existsSync(target) || !fs.readFileSync(target).equals(icon)) fs.writeFileSync(target, icon);
     iconOnDisk = target;
   } catch (e) {
     console.error("icon copy failed", e);
