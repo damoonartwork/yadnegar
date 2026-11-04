@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Bell, Check, GripVertical, Pen, Star, Trash2 } from "lucide-react";
-import { Reorder } from "motion/react";
+import { createPortal } from "react-dom";
+import { Reorder, motion, useMotionValue } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { fromKey, jDay, monthName, toFa } from "@/lib/jalali";
@@ -23,7 +24,36 @@ interface Props {
 
 export function TaskItem({ task, index, draggable, onDragEnd, showDate, onToggle, onImportant, onRemove, onEdit }: Props) {
   const [editing, setEditing] = React.useState(false);
-  const [dragging, setDragging] = React.useState(false);
+  /** دکمهٔ موس پایین است و کارت در دست است */
+  const [lifted, setLifted] = React.useState(false);
+  /** نسخهٔ شناور کارت روی بالاترین لایه نمایش داده می‌شود (حین کشیدن و فرود) */
+  const [floating, setFloating] = React.useState(false);
+  const liRef = React.useRef<HTMLLIElement>(null);
+  const landTimer = React.useRef<number>();
+  const top = useMotionValue(0);
+  const left = useMotionValue(0);
+  const width = useMotionValue(0);
+  const height = useMotionValue(0);
+
+  // نسخهٔ شناور هر فریم دقیقاً روی جای کارت اصلی قرار می‌گیرد
+  React.useEffect(() => {
+    if (!floating) return;
+    let raf = 0;
+    const follow = () => {
+      const r = liRef.current?.getBoundingClientRect();
+      if (r) {
+        top.set(r.top);
+        left.set(r.left);
+        width.set(r.width);
+        height.set(r.height);
+      }
+      raf = requestAnimationFrame(follow);
+    };
+    follow();
+    return () => cancelAnimationFrame(raf);
+  }, [floating, top, left, width, height]);
+
+  React.useEffect(() => () => window.clearTimeout(landTimer.current), []);
   const [title, setTitle] = React.useState(task.title);
   const [time, setTime] = React.useState(task.time ?? "");
 
@@ -42,40 +72,13 @@ export function TaskItem({ task, index, draggable, onDragEnd, showDate, onToggle
     setEditing(false);
   };
 
-  return (
-    <Reorder.Item
-      as="li"
-      value={task}
-      dragListener={!!draggable && !editing}
-      onDragStart={() => setDragging(true)}
-      onDragEnd={() => {
-        setDragging(false);
-        onDragEnd?.();
-      }}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.2, layout: { type: "spring", stiffness: 520, damping: 38 } }}
-      whileDrag={{
-        scale: 1.025,
-        boxShadow: "0 18px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.18), 0 0 28px rgba(255,255,255,0.08)",
-      }}
-      style={{ position: "relative", zIndex: dragging ? 50 : 0 }}
-      className={cn(
-        "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
-        draggable && !editing && "cursor-grab active:cursor-grabbing",
-        dragging
-          ? "border-white/20 bg-[#262628]/95 backdrop-blur-xl"
-          : task.important && !task.done
-            ? "border-amber-200/20 bg-amber-200/[0.05] shadow-[inset_0_1px_1px_rgba(253,230,138,0.12)]"
-            : "border-white/[0.07] bg-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-white/[0.06]"
-      )}
-    >
+  const content = (glow: boolean) => (
+    <>
       {/* شماره کار؛ هنگام کشیدن روشن می‌شود */}
       <span
         className={cn(
           "relative grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[13px] font-bold tabular-nums transition-all duration-200",
-          dragging
+          glow
             ? "scale-110 bg-white text-black shadow-[0_0_16px_rgba(255,255,255,0.45)]"
             : task.done
               ? "bg-white/[0.04] text-white/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
@@ -84,14 +87,14 @@ export function TaskItem({ task, index, draggable, onDragEnd, showDate, onToggle
                 : "bg-white/[0.07] text-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.18)]"
         )}
       >
-        <span className={cn("transition-opacity", draggable && !dragging && !editing && "group-hover:opacity-0")}>
+        <span className={cn("transition-opacity", draggable && !glow && !editing && "group-hover:opacity-0")}>
           {toFa(index + 1)}
         </span>
         {draggable && !editing && (
           <GripVertical
             className={cn(
               "absolute h-4 w-4 opacity-0 transition-opacity",
-              !dragging && "group-hover:opacity-70"
+              !glow && "group-hover:opacity-70"
             )}
           />
         )}
@@ -177,6 +180,69 @@ export function TaskItem({ task, index, draggable, onDragEnd, showDate, onToggle
           </button>
         </div>
       )}
-    </Reorder.Item>
+    </>
+  );
+
+  return (
+    <>
+      <Reorder.Item
+        ref={liRef}
+        as="li"
+        value={task}
+        dragListener={!!draggable && !editing}
+        onDragStart={() => {
+          window.clearTimeout(landTimer.current);
+          setLifted(true);
+          setFloating(true);
+        }}
+        onDragEnd={() => {
+          setLifted(false);
+          onDragEnd?.();
+          // کمی صبر تا کارت در جای جدیدش فرود بیاید
+          landTimer.current = window.setTimeout(() => setFloating(false), 300);
+        }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, x: 40 }}
+        transition={{ duration: 0.2, layout: { type: "spring", stiffness: 520, damping: 38 } }}
+        style={{ position: "relative" }}
+        className={cn(
+          "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
+          draggable && !editing && "cursor-grab active:cursor-grabbing",
+          floating
+            ? "border-transparent bg-transparent shadow-none [&>*]:invisible"
+            : task.important && !task.done
+              ? "border-amber-200/20 bg-amber-200/[0.05] shadow-[inset_0_1px_1px_rgba(253,230,138,0.12)]"
+              : "border-white/[0.07] bg-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-white/[0.06]"
+        )}
+      >
+        {content(false)}
+      </Reorder.Item>
+
+      {floating &&
+        createPortal(
+          <motion.div
+            dir="rtl"
+            aria-hidden
+            style={{ position: "fixed", top, left, width, height, zIndex: 200, pointerEvents: "none" }}
+            initial={{ scale: 1, rotate: 0, boxShadow: "0 0 0 rgba(0,0,0,0)" }}
+            animate={
+              lifted
+                ? {
+                    scale: 1.035,
+                    rotate: -0.6,
+                    boxShadow:
+                      "0 28px 60px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.16), 0 0 40px rgba(255,255,255,0.08)",
+                  }
+                : { scale: 1, rotate: 0, boxShadow: "0 0 0 rgba(0,0,0,0)" }
+            }
+            transition={{ type: "spring", stiffness: 420, damping: 30 }}
+            className="flex items-center gap-3 rounded-2xl border border-white/20 bg-[#26262a]/95 px-4 py-3 font-sans text-white backdrop-blur-xl"
+          >
+            {content(lifted)}
+          </motion.div>,
+          document.body
+        )}
+    </>
   );
 }
