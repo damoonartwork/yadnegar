@@ -237,7 +237,7 @@ export function TaskItem({ task, index, draggable, onDragEnd, showDate, onToggle
                 : { scale: 1, rotate: 0, boxShadow: "0 0 0 rgba(0,0,0,0)" }
             }
             transition={{ type: "spring", stiffness: 420, damping: 30 }}
-            className="flex items-center gap-3 rounded-2xl border border-white/20 bg-[#26262a]/95 px-4 py-3 font-sans text-white backdrop-blur-xl"
+            className="yg-float flex items-center gap-3 rounded-2xl border border-white/25 px-4 py-3 font-sans text-white"
           >
             {content(lifted)}
           </motion.div>,
