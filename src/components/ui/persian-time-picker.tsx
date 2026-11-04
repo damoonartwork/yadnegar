@@ -103,7 +103,7 @@ export function PersianTimePicker({ value, onChange, compact, className }: Persi
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
                 style={{ top: pos.top, right: pos.right, width: POP_W }}
-                className="fixed z-[61] rounded-3xl border border-white/10 bg-[#161616]/90 p-4 text-white backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_50px_rgba(0,0,0,0.6)]"
+                className="fixed z-[61] rounded-3xl border border-white/10 yg-panel p-4 text-white backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_50px_rgba(0,0,0,0.6)]"
               >
                 {/* نمایش ساعت انتخاب‌شده */}
                 <div className="mb-3 flex items-center justify-between">

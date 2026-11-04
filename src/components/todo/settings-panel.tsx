@@ -1,10 +1,10 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { BellRing, ImagePlus, RotateCcw, X } from "lucide-react";
-import { DEFAULT_SETTINGS, type BgPreset, type Settings } from "@/lib/types";
+import { DEFAULT_SETTINGS, type BgPreset, type Settings, type ThemeMode } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toFa } from "@/lib/jalali";
-import { BG_PRESETS, presetSwatch } from "./backdrop";
+import { BG_PRESETS, imageIsLight, presetSwatch } from "./backdrop";
 import { UpdateSection } from "./update-section";
 
 interface Props {
@@ -133,7 +133,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
             exit={{ scale: 0.96, opacity: 0 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="flex max-h-full w-full max-w-[880px] flex-col rounded-3xl border border-white/10 bg-[#141414]/80 backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_60px_rgba(0,0,0,0.6)]"
+            className="flex max-h-full w-full max-w-[880px] flex-col rounded-3xl border border-white/10 yg-panel backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_60px_rgba(0,0,0,0.6)]"
           >
             <div className="flex shrink-0 items-center justify-between px-6 pt-5 pb-3">
               <h2 className="text-lg font-bold">تنظیمات</h2>
@@ -158,6 +158,34 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
                     <RotateCcw className="h-3.5 w-3.5" />
                     برگشت به حالت پیش‌فرض
                   </button>
+                </Section>
+
+                <Section title="حالت رنگ">
+                  <div className="flex gap-1 rounded-full bg-black/25 p-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+                    {(
+                      [
+                        { id: "auto", label: "خودکار" },
+                        { id: "dark", label: "تیره" },
+                        { id: "light", label: "روشن" },
+                      ] as { id: ThemeMode; label: string }[]
+                    ).map((o) => (
+                      <button
+                        key={o.id}
+                        onClick={() => set({ theme: o.id })}
+                        className={cn(
+                          "flex-1 rounded-full py-1.5 text-xs transition-colors",
+                          (settings.theme ?? "auto") === o.id
+                            ? "bg-white font-bold text-black shadow-md"
+                            : "font-semibold text-white/60 hover:text-white"
+                        )}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="px-1 text-[11px] text-white/40">
+                    «خودکار»: روی پس‌زمینهٔ روشن، شیشه سفید و نوشته‌ها تیره می‌شوند.
+                  </p>
                 </Section>
 
                 <Section title="پس‌زمینه">
@@ -215,7 +243,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
                       e.target.value = "";
                       if (!f) return;
                       const data = await loadImage(f);
-                      set({ background: "image", bgImage: data });
+                      set({ background: "image", bgImage: data, bgImageLight: await imageIsLight(data) });
                     }}
                   />
                   {settings.bgImage && (

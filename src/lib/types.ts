@@ -16,7 +16,8 @@ export interface Task {
   order?: number;
 }
 
-export type BgPreset = "dots" | "glow" | "aurora" | "ocean" | "sunset" | "forest" | "graphite";
+export type BgPreset = "dots" | "glow" | "aurora" | "ocean" | "sunset" | "forest" | "graphite" | "paper" | "mist";
+export type ThemeMode = "auto" | "dark" | "light";
 
 export interface Settings {
   autoStart: boolean;
@@ -30,6 +31,10 @@ export interface Settings {
   background: BgPreset | "image";
   /** تصویر دلخواه پس‌زمینه به صورت data URL */
   bgImage?: string;
+  /** آیا عکس دلخواه روشن است (برای حالت رنگ خودکار) */
+  bgImageLight?: boolean;
+  /** حالت رنگ: خودکار بر اساس پس‌زمینه، تیره یا روشن */
+  theme: ThemeMode;
   /** تیره‌کردن پس‌زمینه (۰ تا ۸۰ درصد) */
   bgDim: number;
   /** پنجرهٔ یادآوری اختصاصی گوشهٔ صفحه */
@@ -52,6 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
   glassEdge: 35,
   background: "glow",
   bgDim: 0,
+  theme: "auto",
   popupReminder: true,
   windowsNotification: true,
   sound: true,

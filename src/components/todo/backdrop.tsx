@@ -12,6 +12,8 @@ interface Blob {
 
 interface PresetDef {
   label: string;
+  /** پس‌زمینهٔ روشن → در حالت خودکار، نوشته‌ها تیره می‌شوند */
+  light?: boolean;
   base: string;
   dots?: boolean;
   blobs?: Blob[];
@@ -62,6 +64,27 @@ export const BG_PRESETS: Record<BgPreset, PresetDef> = {
       { color: "#a3e635", size: 360, bottom: "-10%", right: "10%", opacity: 0.2 },
     ],
   },
+  paper: {
+    label: "روشن",
+    light: true,
+    base: "#eceef2",
+    dots: true,
+    blobs: [
+      { color: "#c7d2fe", size: 520, top: "-12%", right: "6%", opacity: 0.55 },
+      { color: "#fbcfe8", size: 440, bottom: "-12%", left: "16%", opacity: 0.5 },
+      { color: "#bae6fd", size: 400, top: "38%", left: "-6%", opacity: 0.5 },
+    ],
+  },
+  mist: {
+    label: "مه صبحگاهی",
+    light: true,
+    base: "linear-gradient(160deg,#fdfcfb 0%,#eef1f5 45%,#dde7f2 100%)",
+    blobs: [
+      { color: "#a5b4fc", size: 480, top: "-10%", left: "30%", opacity: 0.4 },
+      { color: "#fda4af", size: 420, bottom: "-14%", right: "10%", opacity: 0.35 },
+      { color: "#99f6e4", size: 360, top: "40%", right: "40%", opacity: 0.3 },
+    ],
+  },
   graphite: {
     label: "گرافیت",
     base: "linear-gradient(160deg,#1c1c1f 0%,#2b2b31 50%,#121214 100%)",
@@ -71,6 +94,35 @@ export const BG_PRESETS: Record<BgPreset, PresetDef> = {
     ],
   },
 };
+
+/** میانگین روشنایی یک عکس (۰ تا ۱) — برای تشخیص پس‌زمینهٔ روشن */
+export function imageIsLight(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onerror = () => resolve(false);
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = 48;
+      c.height = 32;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      const d = ctx.getImageData(0, 0, c.width, c.height).data;
+      let sum = 0;
+      for (let i = 0; i < d.length; i += 4) sum += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+      resolve(sum / (d.length / 4) / 255 > 0.58);
+    };
+    img.src = src;
+  });
+}
+
+/** حالت روشن فعال باشد؟ (خودکار: بر اساس روشن بودن پس‌زمینه و میزان تیره‌کردن) */
+export function isLightTheme(s: Settings): boolean {
+  if (s.theme === "light") return true;
+  if (s.theme === "dark") return false;
+  if (s.bgDim >= 40) return false;
+  if (s.background === "image") return !!(s.bgImage && s.bgImageLight);
+  return !!BG_PRESETS[s.background as BgPreset]?.light;
+}
 
 /** پیش‌نمایش کوچک هر پس‌زمینه برای تنظیمات */
 export function presetSwatch(p: BgPreset): string {

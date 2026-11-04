@@ -16,7 +16,7 @@ import { SettingsPanel } from "@/components/todo/settings-panel";
 import { useTasks } from "@/hooks/use-tasks";
 import { dayKey, jDay, longFa, monthName, toFa } from "@/lib/jalali";
 import { isSameDay } from "date-fns";
-import { Backdrop } from "@/components/todo/backdrop";
+import { Backdrop, imageIsLight, isLightTheme } from "@/components/todo/backdrop";
 import type { Task } from "@/lib/types";
 
 type Filter = "day" | "important" | "all";
@@ -90,6 +90,21 @@ export default function App() {
     r.setProperty("--g-tint", String(glassTint / 100));
     r.setProperty("--g-edge", String(glassEdge / 100));
   }, [glassBlur, glassTint, glassEdge]);
+
+  // حالت رنگ روشن/تیره
+  const light = isLightTheme(store.settings);
+  React.useEffect(() => {
+    document.documentElement.classList.toggle("theme-light", light);
+  }, [light]);
+
+  // برای عکس‌هایی که قبلاً انتخاب شده‌اند، روشن بودن را یک بار بسنج
+  const { background, bgImage, bgImageLight } = store.settings;
+  React.useEffect(() => {
+    if (background === "image" && bgImage && bgImageLight === undefined) {
+      imageIsLight(bgImage).then((v) => store.setSettings((s) => ({ ...s, bgImageLight: v })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [background, bgImage, bgImageLight]);
 
   // میانبر Ctrl+N برای کار جدید
   React.useEffect(() => {

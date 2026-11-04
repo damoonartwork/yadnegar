@@ -21,7 +21,7 @@ export function ReminderToasts({ reminders, onDone, onSnooze, onDismiss }: Props
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="pointer-events-auto w-full rounded-3xl border border-white/10 bg-[#141414]/85 p-4 backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_10px_40px_rgba(0,0,0,0.6),0_0_30px_rgba(255,255,255,0.06)]"
+            className="pointer-events-auto w-full rounded-3xl border border-white/10 yg-panel p-4 backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_10px_40px_rgba(0,0,0,0.6),0_0_30px_rgba(255,255,255,0.06)]"
           >
             <div className="flex items-start gap-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-black shadow-[0_0_16px_rgba(255,255,255,0.3)]">

@@ -109,7 +109,7 @@ export function GregorianCard({ zone, onZoneChange, className }: Props) {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
                 style={{ top: pos.top, right: pos.right, width: pos.width }}
-                className="fixed z-[61] flex max-h-[400px] flex-col rounded-3xl border border-white/10 bg-[#161616]/95 p-3 text-white backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_50px_rgba(0,0,0,0.6)]"
+                className="fixed z-[61] flex max-h-[400px] flex-col rounded-3xl border border-white/10 yg-panel p-3 text-white backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_50px_rgba(0,0,0,0.6)]"
               >
                 <div className="mb-2 flex items-center gap-2 rounded-full bg-black/30 px-3 py-2 shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]">
                   <Search className="h-4 w-4 shrink-0 text-white/40" />

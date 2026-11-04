@@ -113,3 +113,50 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   -webkit-backdrop-filter: blur(max(var(--g-blur), 20px)) saturate(170%);
   backdrop-filter: blur(max(var(--g-blur), 20px)) saturate(170%);
 }
+
+/* ---------- پنل‌های شناور (تنظیمات، انتخاب ساعت، انتخاب کشور، یادآور) ---------- */
+.yg-panel { background-color: rgb(20 20 22 / 0.88); }
+
+/* ======================================================================
+   حالت روشن: رنگ «سفید» و «سیاه» کل برنامه جابه‌جا می‌شوند
+   (همهٔ text-white/bg-white/border-white از این متغیرها رنگ می‌گیرند)
+   ====================================================================== */
+.theme-light {
+  color-scheme: light;
+  --color-white: #16161a;
+  --color-black: #ffffff;
+  --color-amber-200: #b45309;
+  --color-amber-300: #d97706;
+  --color-rose-300: #be123c;
+}
+.theme-light body { color: #16161a; }
+
+/* شیشهٔ سفید مات */
+.theme-light .yg-glass { background-color: rgb(255 255 255 / calc(var(--g-tint) + 0.32)); }
+.theme-light .yg-glass [data-layer="edge"] {
+  box-shadow:
+    inset 1px 1px 1px 0 rgb(255 255 255 / calc(var(--g-edge) + 0.35)),
+    inset -1px -1px 1px 0 rgb(255 255 255 / calc(var(--g-edge) * 0.6)) !important;
+}
+.theme-light .yg-float { background-color: rgb(255 255 255 / calc(var(--g-tint) + 0.5)); }
+.theme-light .yg-panel { background-color: rgb(250 250 252 / 0.9); }
+
+/* درخشش متن سفید روی زمینهٔ روشن معنا ندارد */
+.theme-light .glow-text { text-shadow: none; }
+
+/* آیکن سفید برنامه در نوار عنوان تیره شود */
+.theme-light .yg-logo { filter: invert(1) drop-shadow(0 0 0 transparent); }
+
+/* نقطه‌های پس‌زمینه و نوار اسکرول */
+.theme-light .yg-bg .dots { background-image: radial-gradient(rgba(0, 0, 0, 0.16) 1px, transparent 1.2px); }
+.theme-light .thin-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.18); }
+
+/* اسلایدر تنظیمات */
+.theme-light .yg-range { background: linear-gradient(to left, #16161a var(--pct), rgba(0, 0, 0, 0.12) var(--pct)); }
+.theme-light .yg-range::-webkit-slider-thumb {
+  background: #16161a;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* دکمهٔ بستن پنجره روی قرمز همیشه سفید بماند */
+.theme-light .hover\:bg-\[\#c42b1c\]:hover { color: #fff; }
