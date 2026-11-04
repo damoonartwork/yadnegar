@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Bell, Check, Pen, Star, Trash2 } from "lucide-react";
-import { motion } from "motion/react";
+import { Bell, Check, GripVertical, Pen, Star, Trash2 } from "lucide-react";
+import { Reorder } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/lib/types";
 import { fromKey, jDay, monthName, toFa } from "@/lib/jalali";
@@ -9,6 +9,11 @@ import { PersianTimePicker } from "@/components/ui/persian-time-picker";
 
 interface Props {
   task: Task;
+  /** شمارهٔ کار در لیست (از صفر) */
+  index: number;
+  /** امکان جابه‌جایی با کشیدن */
+  draggable?: boolean;
+  onDragEnd?: () => void;
   showDate?: boolean;
   onToggle: () => void;
   onImportant: () => void;
@@ -16,8 +21,9 @@ interface Props {
   onEdit: (patch: Partial<Task>) => void;
 }
 
-export function TaskItem({ task, showDate, onToggle, onImportant, onRemove, onEdit }: Props) {
+export function TaskItem({ task, index, draggable, onDragEnd, showDate, onToggle, onImportant, onRemove, onEdit }: Props) {
   const [editing, setEditing] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
   const [title, setTitle] = React.useState(task.title);
   const [time, setTime] = React.useState(task.time ?? "");
 
@@ -37,19 +43,60 @@ export function TaskItem({ task, showDate, onToggle, onImportant, onRemove, onEd
   };
 
   return (
-    <motion.li
-      layout
+    <Reorder.Item
+      as="li"
+      value={task}
+      dragListener={!!draggable && !editing}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={() => {
+        setDragging(false);
+        onDragEnd?.();
+      }}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.2, layout: { type: "spring", stiffness: 520, damping: 38 } }}
+      whileDrag={{
+        scale: 1.025,
+        boxShadow: "0 18px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.18), 0 0 28px rgba(255,255,255,0.08)",
+      }}
+      style={{ position: "relative", zIndex: dragging ? 50 : 0 }}
       className={cn(
         "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
-        task.important && !task.done
-          ? "border-amber-200/20 bg-amber-200/[0.05] shadow-[inset_0_1px_1px_rgba(253,230,138,0.12)]"
-          : "border-white/[0.07] bg-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-white/[0.06]"
+        draggable && !editing && "cursor-grab active:cursor-grabbing",
+        dragging
+          ? "border-white/20 bg-[#262628]/95 backdrop-blur-xl"
+          : task.important && !task.done
+            ? "border-amber-200/20 bg-amber-200/[0.05] shadow-[inset_0_1px_1px_rgba(253,230,138,0.12)]"
+            : "border-white/[0.07] bg-white/[0.03] shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] hover:bg-white/[0.06]"
       )}
     >
+      {/* شماره کار؛ هنگام کشیدن روشن می‌شود */}
+      <span
+        className={cn(
+          "relative grid h-7 w-7 shrink-0 place-items-center rounded-[10px] text-[13px] font-bold tabular-nums transition-all duration-200",
+          dragging
+            ? "scale-110 bg-white text-black shadow-[0_0_16px_rgba(255,255,255,0.45)]"
+            : task.done
+              ? "bg-white/[0.04] text-white/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]"
+              : task.important
+                ? "bg-amber-200/10 text-amber-200 shadow-[inset_0_1px_1px_rgba(253,230,138,0.2)]"
+                : "bg-white/[0.07] text-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.18)]"
+        )}
+      >
+        <span className={cn("transition-opacity", draggable && !dragging && !editing && "group-hover:opacity-0")}>
+          {toFa(index + 1)}
+        </span>
+        {draggable && !editing && (
+          <GripVertical
+            className={cn(
+              "absolute h-4 w-4 opacity-0 transition-opacity",
+              !dragging && "group-hover:opacity-70"
+            )}
+          />
+        )}
+      </span>
+
       <button
         onClick={onToggle}
         className={cn(
@@ -130,6 +177,6 @@ export function TaskItem({ task, showDate, onToggle, onImportant, onRemove, onEd
           </button>
         </div>
       )}
-    </motion.li>
+    </Reorder.Item>
   );
 }

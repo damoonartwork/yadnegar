@@ -13,6 +13,26 @@ export function dueAt(t: Task): number | null {
   return d.getTime();
 }
 
+/** ترتیب قدیمی (پیش از ترتیب دستی) — فقط برای مهاجرت کارهای موجود */
+function legacySort(a: Task, b: Task) {
+  if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+  if (a.done !== b.done) return a.done ? 1 : -1;
+  if (a.important !== b.important) return a.important ? -1 : 1;
+  const da = dueAt(a) ?? Infinity;
+  const db = dueAt(b) ?? Infinity;
+  if (da !== db) return da - db;
+  return b.createdAt - a.createdAt;
+}
+
+/** به کارهایی که هنوز ترتیب ندارند، ترتیب یکتا بده */
+function withOrder(tasks: Task[]): Task[] {
+  if (tasks.every((t) => typeof t.order === "number")) return tasks;
+  let max = Math.max(0, ...tasks.map((t) => t.order ?? 0));
+  const missing = tasks.filter((t) => typeof t.order !== "number").sort(legacySort);
+  const assigned = new Map(missing.map((t) => [t.id, ++max]));
+  return tasks.map((t) => (assigned.has(t.id) ? { ...t, order: assigned.get(t.id) } : t));
+}
+
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
 /**
@@ -42,7 +62,7 @@ export function useTasks() {
         }
       }
       if (data) {
-        setTasks(data.tasks ?? []);
+        setTasks(withOrder(data.tasks ?? []));
         setSettings({ ...DEFAULT_SETTINGS, ...(data.settings ?? {}) });
       }
       setLoaded(true);
@@ -113,7 +133,14 @@ export function useTasks() {
   const addTask = React.useCallback(
     (input: { title: string; date: string; time?: string; important: boolean }) => {
       setTasks((prev) => [
-        { id: uid(), done: false, createdAt: Date.now(), ...input, time: input.time || undefined },
+        {
+          id: uid(),
+          done: false,
+          createdAt: Date.now(),
+          ...input,
+          time: input.time || undefined,
+          order: Math.max(0, ...prev.map((t) => t.order ?? 0)) + 1,
+        },
         ...prev,
       ]);
     },
@@ -133,6 +160,21 @@ export function useTasks() {
         return next;
       })
     );
+  }, []);
+
+  /**
+   * جابه‌جایی دستی: همان مقادیر ترتیبِ کارهای این لیست را به ترتیب جدید می‌دهد
+   * تا جای کارهای دیگر (روزهای دیگر) دست نخورد.
+   */
+  const reorderTasks = React.useCallback((ids: string[]) => {
+    setTasks((prev) => {
+      const byId = new Map(prev.map((t) => [t.id, t]));
+      const slots = ids
+        .map((id) => byId.get(id)?.order ?? 0)
+        .sort((a, b) => a - b);
+      const next = new Map(ids.map((id, i) => [id, slots[i]]));
+      return prev.map((t) => (next.has(t.id) && t.order !== next.get(t.id) ? { ...t, order: next.get(t.id) } : t));
+    });
   }, []);
 
   const removeTask = React.useCallback((id: string) => {
@@ -159,6 +201,7 @@ export function useTasks() {
     loaded,
     reminders,
     addTask,
+    reorderTasks,
     updateTask,
     removeTask,
     dismissReminder,

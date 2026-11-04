@@ -1,5 +1,5 @@
 import * as React from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, Reorder, motion } from "motion/react";
 import { Sparkles } from "lucide-react";
 import { GlassCalendar, type DayMark } from "@/components/ui/glass-calendar";
 import { LiquidGlassButton } from "@/components/ui/liquid-glass-button";
@@ -13,7 +13,7 @@ import { AddTask, type AddTaskHandle } from "@/components/todo/add-task";
 import { TaskItem } from "@/components/todo/task-item";
 import { ReminderToasts } from "@/components/todo/reminder-toast";
 import { SettingsPanel } from "@/components/todo/settings-panel";
-import { useTasks, dueAt } from "@/hooks/use-tasks";
+import { useTasks } from "@/hooks/use-tasks";
 import { dayKey, jDay, longFa, monthName, toFa } from "@/lib/jalali";
 import { isSameDay } from "date-fns";
 import { Backdrop } from "@/components/todo/backdrop";
@@ -27,13 +27,12 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "همه" },
 ];
 
-function sortTasks(a: Task, b: Task) {
-  if (a.done !== b.done) return a.done ? 1 : -1;
-  if (a.important !== b.important) return a.important ? -1 : 1;
-  const da = dueAt(a) ?? Infinity;
-  const db = dueAt(b) ?? Infinity;
-  if (da !== db) return da - db;
-  return b.createdAt - a.createdAt;
+/** ترتیب دستی؛ در نماهای چندروزه اول بر اساس روز */
+function sortTasks(byDate: boolean) {
+  return (a: Task, b: Task) => {
+    if (byDate && a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return (a.order ?? 0) - (b.order ?? 0) || b.createdAt - a.createdAt;
+  };
 }
 
 export default function App() {
@@ -60,8 +59,19 @@ export default function App() {
     let list = tasks;
     if (filter === "day") list = tasks.filter((t) => t.date === selectedKey);
     else if (filter === "important") list = tasks.filter((t) => t.important && !t.done);
-    return [...list].sort(sortTasks);
+    return [...list].sort(sortTasks(filter !== "day"));
   }, [tasks, filter, selectedKey]);
+
+  // در حین کشیدن، ترتیب موقت محلی است و با رها کردن ذخیره می‌شود
+  const [dragList, setDragList] = React.useState<Task[] | null>(null);
+  const dragRef = React.useRef<Task[] | null>(null);
+  const shown = dragList ?? visible;
+  const canDrag = filter === "day" && visible.length > 1;
+  const commitDrag = () => {
+    if (dragRef.current) store.reorderTasks(dragRef.current.map((t) => t.id));
+    dragRef.current = null;
+    setDragList(null);
+  };
 
   const dayTasks = tasks.filter((t) => t.date === selectedKey);
   const doneCount = dayTasks.filter((t) => t.done).length;
@@ -159,12 +169,25 @@ export default function App() {
               </div>
             </div>
 
-            <ul className="thin-scroll -mx-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
+            <Reorder.Group
+              as="ul"
+              axis="y"
+              layoutScroll
+              values={shown}
+              onReorder={(list) => {
+                dragRef.current = list;
+                setDragList(list);
+              }}
+              className="thin-scroll -mx-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2"
+            >
               <AnimatePresence initial={false}>
-                {visible.map((t) => (
+                {shown.map((t, i) => (
                   <TaskItem
                     key={t.id}
                     task={t}
+                    index={i}
+                    draggable={canDrag}
+                    onDragEnd={commitDrag}
                     showDate={filter !== "day"}
                     onToggle={() => store.updateTask(t.id, { done: !t.done })}
                     onImportant={() => store.updateTask(t.id, { important: !t.important })}
@@ -184,7 +207,7 @@ export default function App() {
                   <p className="text-xs text-white/25">از کادر پایین یک کار اضافه کن (Ctrl+N)</p>
                 </motion.li>
               )}
-            </ul>
+            </Reorder.Group>
 
             <div className="mt-4 shrink-0">
               <AddTask

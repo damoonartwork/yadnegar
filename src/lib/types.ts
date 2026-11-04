@@ -12,6 +12,8 @@ export interface Task {
   /** اگر کاربر «بعداً یادم بنداز» زده باشد */
   snoozedUntil?: number;
   createdAt: number;
+  /** ترتیب دستی کار در لیست (کوچک‌تر = بالاتر) */
+  order?: number;
 }
 
 export type BgPreset = "dots" | "glow" | "aurora" | "ocean" | "sunset" | "forest" | "graphite";
