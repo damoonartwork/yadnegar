@@ -1,0 +1,14 @@
+name = "yadnegar-api"
+main = "src/index.ts"
+compatibility_date = "2025-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yadnegar"
+database_id = "10ff75fb-f3a6-4a52-be38-b4d46e7e688e"
+
+[vars]
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = "465"
+# SMTP_USER و SMTP_PASS به‌صورت secret تنظیم می‌شوند (wrangler secret put)

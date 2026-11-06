@@ -7,6 +7,10 @@ on:
   push:
     branches:
       - main
+    # تغییرهای فقط-سرور نسخهٔ جدید برنامه نمی‌سازند
+    paths-ignore:
+      - "server/**"
+      - ".github/workflows/deploy-server.yml"
   workflow_dispatch:
 
 permissions:
