@@ -30,12 +30,12 @@ export function UpdateSection() {
   };
 
   const btn =
-    "flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold transition-colors disabled:opacity-50";
+    "flex items-center justify-center gap-2 rounded-full py-2 text-[13px] font-bold transition-colors disabled:opacity-50";
 
   return (
-    <div className="space-y-2 rounded-2xl bg-white/[0.03] p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+    <div className="space-y-2 rounded-2xl bg-white/[0.035] p-3.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">نسخهٔ فعلی</p>
+        <p className="text-[13px] font-semibold">نسخهٔ فعلی</p>
         <span className="text-xs text-white/50" dir="ltr">
           {toFa(u.version || "—")}
         </span>

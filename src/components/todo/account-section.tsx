@@ -13,12 +13,13 @@ function ago(ms?: number) {
   return `${toFa(Math.round(s / 3600))} ساعت پیش`;
 }
 
+const card = "space-y-3 rounded-2xl bg-white/[0.035] p-3.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]";
 const field =
-  "w-full rounded-full bg-black/25 px-4 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] placeholder:text-white/35 focus:ring-1 focus:ring-white/30";
+  "w-full rounded-full bg-black/25 px-4 py-2 text-[13px] text-white outline-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] placeholder:text-white/35 focus:ring-1 focus:ring-white/30";
 const primary =
-  "flex w-full items-center justify-center gap-2 rounded-full bg-white py-2.5 text-sm font-bold text-black transition-opacity disabled:opacity-40";
+  "flex w-full items-center justify-center gap-2 rounded-full bg-white py-2 text-[13px] font-bold text-black transition-opacity disabled:opacity-40";
 const secondary =
-  "flex flex-1 items-center justify-center gap-2 rounded-full bg-white/[0.07] py-2.5 text-xs font-semibold text-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] hover:bg-white/[0.12]";
+  "flex flex-1 items-center justify-center gap-2 rounded-full bg-white/[0.07] py-2 text-xs font-semibold text-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] hover:bg-white/[0.12]";
 
 export function AccountSection({ sync }: { sync: SyncApi }) {
   const { account, status, lastError } = sync;
@@ -53,13 +54,13 @@ export function AccountSection({ sync }: { sync: SyncApi }) {
   if (account.token) {
     const offline = status === "offline" || status === "error";
     return (
-      <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+      <div className={card}>
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-black">
-            {offline ? <CloudOff className="h-5 w-5" /> : <Cloud className="h-5 w-5" />}
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-black">
+            {offline ? <CloudOff className="h-4 w-4" /> : <Cloud className="h-4 w-4" />}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold" dir="ltr">
+            <p className="truncate text-[13px] font-semibold" dir="ltr">
               {account.email}
             </p>
             <p className={cn("text-xs", offline ? "text-amber-200" : "text-white/50")}>
@@ -67,9 +68,6 @@ export function AccountSection({ sync }: { sync: SyncApi }) {
             </p>
           </div>
         </div>
-        <p className="text-[11px] leading-5 text-white/45">
-          کارها، ترتیب‌شان، یادداشت سریع و ظاهر برنامه بین همهٔ دستگاه‌هایی که با این ایمیل وارد شده‌اند یکی می‌ماند.
-        </p>
         <div className="flex gap-2">
           <button onClick={() => void sync.syncNow()} className={secondary} disabled={status === "syncing"}>
             <RefreshCw className={cn("h-4 w-4", status === "syncing" && "animate-spin")} />
@@ -80,13 +78,12 @@ export function AccountSection({ sync }: { sync: SyncApi }) {
             خروج
           </button>
         </div>
-        <ClaudeConnect server={account.server} token={account.token} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 rounded-2xl bg-white/[0.03] p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)]">
+    <div className={card}>
       <p className="text-[12px] leading-6 text-white/60">
         با ایمیلت وارد شو تا کارهایت بین ویندوز و گوشی یکی باشد. رمز عبور لازم نیست؛ یک کد ۶ رقمی به ایمیلت می‌آید.
       </p>
@@ -177,7 +174,7 @@ export function AccountSection({ sync }: { sync: SyncApi }) {
 }
 
 /** آدرس شخصی برای وصل کردن یادنگار به Claude (MCP) */
-function ClaudeConnect({ server, token }: { server: string; token: string }) {
+export function ClaudeConnect({ server, token }: { server: string; token: string }) {
   const [active, setActive] = React.useState<boolean | null>(null);
   const [url, setUrl] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -224,15 +221,21 @@ function ClaudeConnect({ server, token }: { server: string; token: string }) {
   };
 
   return (
-    <div className="space-y-2.5 border-t border-white/[0.06] pt-3">
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-white/70" />
-        <p className="text-sm font-semibold">اتصال به Claude</p>
-        {active && <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] text-emerald-200">فعال</span>}
+    <div className={card}>
+      <div className="flex items-start gap-3">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.08]">
+          <Sparkles className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 text-[13px] font-semibold">
+            Claude برایت برنامه بچیند
+            {active && <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-normal text-emerald-200">وصل</span>}
+          </p>
+          <p className="mt-0.5 text-[11px] leading-5 text-white/45">
+            آدرس را در Claude، بخش Customize ← Connectors ← Add custom connector بگذار. مثل رمز است؛ به کسی نده.
+          </p>
+        </div>
       </div>
-      <p className="text-[11px] leading-5 text-white/45">
-        با این آدرس، Claude می‌تواند کارهایت را ببیند و برایت برنامه بچیند. آدرس را در Claude، بخش تنظیمات ← Connectors ← افزودن connector دلخواه بگذار. این آدرس مثل رمز است؛ به کسی نده.
-      </p>
       {url ? (
         <div className="space-y-2">
           <div className="flex gap-2">
