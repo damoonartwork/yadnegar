@@ -33,3 +33,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run release
+
+      - name: Attach Android APK to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          APK="android-release/Yadnegar-Android-${VERSION}.apk"
+          if [ -f "$APK" ]; then
+            gh release upload "v${VERSION}" "$APK" --clobber
+          else
+            echo "No APK for ${VERSION}; skipping"
+          fi

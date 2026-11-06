@@ -30,6 +30,18 @@
 - چیدمان افقی دسکتاپ: ساعت و تقویم ماهانه سمت راست، نوار یادآورهای پیش رو و لیست کارها در وسط
 - داده‌ها در `%APPDATA%\Yadnegar\yadnegar-data.json` ذخیره می‌شوند
 
+## نسخهٔ اندروید
+
+همین برنامه با Capacitor برای اندروید ساخته می‌شود (پوشهٔ `android/`). یادآورها را خود اندروید زمان‌بندی می‌کند
+و داخل اعلان دکمه‌های «انجام شد» و «۱۰ دقیقه بعد» هست. فایل APK هر نسخه در همان صفحهٔ
+[Releases](https://github.com/damoonartwork/yadnegar/releases/latest) کنار نصب‌کنندهٔ ویندوز قرار می‌گیرد
+و برنامهٔ اندروید از ⚙️ ← به‌روزرسانی، نسخهٔ جدید را پیدا می‌کند.
+
+ساخت APK (کلید امضا در `android/keystore.properties` و `android/*.jks` لازم است و در گیت نیست):
+```
+npm run build && npx cap sync android && cd android && ./gradlew assembleRelease
+```
+
 ## ساختار پروژه
 
 ```
