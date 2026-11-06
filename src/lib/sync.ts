@@ -2,7 +2,7 @@
 import type { Settings, Task } from "./types";
 
 /** آدرس سرور پیش‌فرض؛ از تنظیمات حساب قابل تغییر است */
-export const DEFAULT_SERVER = "https://yadnegar-api.damoonartwork.workers.dev";
+export const DEFAULT_SERVER = "https://yadnegar-api.damoon-artwork.workers.dev";
 
 /** تنظیماتی که بین دستگاه‌ها مشترک است (بقیه مخصوص هر دستگاه می‌ماند) */
 export const SHARED_SETTING_KEYS = [
