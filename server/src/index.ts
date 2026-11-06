@@ -53,7 +53,26 @@ function toFaDigits(s: string) {
 
 async function sendCodeEmail(env: Env, to: string, code: string) {
   if (!env.SMTP_USER || !env.SMTP_PASS) throw new Error("email not configured");
-  const port = Number(env.SMTP_PORT || 465);
+  const first = Number(env.SMTP_PORT || 465);
+  try {
+    await sendVia(env, first, to, code);
+  } catch (e) {
+    // اگر یک درگاه نشد، درگاه دیگر جیمیل را امتحان کن
+    const alt = first === 465 ? 587 : 465;
+    try {
+      await sendVia(env, alt, to, code);
+    } catch (e2) {
+      throw new Error(`${first}: ${errText(e)} | ${alt}: ${errText(e2)}`);
+    }
+  }
+}
+
+function errText(e: unknown) {
+  const m = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+  return m.slice(0, 400);
+}
+
+async function sendVia(env: Env, port: number, to: string, code: string) {
   const html = `<!doctype html><html dir="rtl" lang="fa"><body style="margin:0;background:#0a0a0a;font-family:Tahoma,Arial,sans-serif">
   <div style="max-width:420px;margin:32px auto;padding:28px;border-radius:24px;background:#161618;color:#fff;border:1px solid #2a2a2e;text-align:center">
     <div style="font-size:15px;color:#aaa">کد ورود به یادنگار</div>
@@ -66,11 +85,11 @@ async function sendCodeEmail(env: Env, to: string, code: string) {
       port,
       secure: port === 465,
       startTls: port !== 465,
-      credentials: { username: env.SMTP_USER, password: env.SMTP_PASS },
+      credentials: { username: env.SMTP_USER!.trim(), password: env.SMTP_PASS!.replace(/\s+/g, "") },
       authType: ["plain", "login"],
     },
     {
-      from: { name: "یادنگار", email: env.SMTP_USER },
+      from: { name: "یادنگار", email: env.SMTP_USER!.trim() },
       to,
       subject: `کد ورود یادنگار: ${toFaDigits(code)}`,
       text: `کد ورود به یادنگار: ${code}\nاین کد تا ۱۰ دقیقه معتبر است.`,
@@ -102,6 +121,11 @@ async function requestCode(req: Request, env: Env) {
     await sendCodeEmail(env, email, code);
   } catch (e) {
     console.error("send failed", e);
+    // آخرین خطای ایمیل برای عیب‌یابی (بدون رمز)
+    await env.DB.prepare("INSERT INTO diag (key, value, at) VALUES ('mail', ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, at = excluded.at")
+      .bind(errText(e).slice(0, 900), Date.now())
+      .run()
+      .catch(() => {});
     await env.DB.prepare("DELETE FROM login_codes WHERE email = ?").bind(email).run();
     return fail(502, "email_failed");
   }
