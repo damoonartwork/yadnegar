@@ -1,7 +1,8 @@
 import * as React from "react";
-import { Cloud, CloudOff, LogOut, Mail, RefreshCw, Server } from "lucide-react";
+import { Check, Cloud, CloudOff, Copy, LogOut, Mail, RefreshCw, Server, Sparkles } from "lucide-react";
 import { syncErrorText, type SyncApi } from "@/hooks/use-sync";
 import { toFa } from "@/lib/jalali";
+import { connectCreate, connectRevoke, connectStatus } from "@/lib/sync";
 import { cn } from "@/lib/utils";
 
 function ago(ms?: number) {
@@ -79,6 +80,7 @@ export function AccountSection({ sync }: { sync: SyncApi }) {
             خروج
           </button>
         </div>
+        <ClaudeConnect server={account.server} token={account.token} />
       </div>
     );
   }
@@ -170,6 +172,100 @@ export function AccountSection({ sync }: { sync: SyncApi }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/** آدرس شخصی برای وصل کردن یادنگار به Claude (MCP) */
+function ClaudeConnect({ server, token }: { server: string; token: string }) {
+  const [active, setActive] = React.useState<boolean | null>(null);
+  const [url, setUrl] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    connectStatus(server, token)
+      .then((r) => setActive(r.active))
+      .catch(() => setActive(null));
+  }, [server, token]);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await fn();
+    } catch (e) {
+      setError(syncErrorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const create = () =>
+    run(async () => {
+      const r = await connectCreate(server, token);
+      setUrl(r.url);
+      setActive(true);
+      setCopied(false);
+    });
+
+  const copy = async () => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      inputRef.current?.select();
+      document.execCommand("copy");
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="space-y-2.5 border-t border-white/[0.06] pt-3">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-white/70" />
+        <p className="text-sm font-semibold">اتصال به Claude</p>
+        {active && <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] text-emerald-200">فعال</span>}
+      </div>
+      <p className="text-[11px] leading-5 text-white/45">
+        با این آدرس، Claude می‌تواند کارهایت را ببیند و برایت برنامه بچیند. آدرس را در Claude، بخش تنظیمات ← Connectors ← افزودن connector دلخواه بگذار. این آدرس مثل رمز است؛ به کسی نده.
+      </p>
+      {url ? (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input ref={inputRef} readOnly dir="ltr" value={url} onFocus={(e) => e.target.select()} className={cn(field, "py-2 text-left text-[11px]")} />
+            <button onClick={() => void copy()} className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-bold text-black">
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "کپی شد" : "کپی"}
+            </button>
+          </div>
+          <p className="text-[11px] text-amber-200/80">این آدرس فقط همین یک بار نشان داده می‌شود. همین الان در Claude بگذارش.</p>
+        </div>
+      ) : (
+        <button onClick={() => void create()} disabled={busy} className={primary}>
+          <Sparkles className="h-4 w-4" />
+          {busy ? "در حال ساختن…" : active ? "ساختن آدرس تازه (آدرس قبلی باطل می‌شود)" : "ساختن آدرس اتصال"}
+        </button>
+      )}
+      {active && (
+        <button
+          onClick={() =>
+            void run(async () => {
+              await connectRevoke(server, token);
+              setActive(false);
+              setUrl(null);
+            })
+          }
+          disabled={busy}
+          className="px-1 text-[11px] text-white/40 hover:text-white/70"
+        >
+          قطع اتصال Claude
+        </button>
+      )}
+      {error && <p className="px-1 text-xs text-amber-200">{error}</p>}
     </div>
   );
 }

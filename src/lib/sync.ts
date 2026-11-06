@@ -176,3 +176,9 @@ export async function syncOnce(account: AccountState, tasks: Task[], settings: S
     changed,
   };
 }
+
+// ---------- اتصال به Claude (MCP) ----------
+export const connectStatus = (server: string, token: string) =>
+  call<{ active: boolean; createdAt: number | null }>(server, "/connect/status", {}, token);
+export const connectCreate = (server: string, token: string) => call<{ url: string }>(server, "/connect/create", {}, token);
+export const connectRevoke = (server: string, token: string) => call<{ ok: true }>(server, "/connect/revoke", {}, token);

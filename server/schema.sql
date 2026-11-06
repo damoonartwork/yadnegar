@@ -55,3 +55,10 @@ CREATE TABLE IF NOT EXISTS diag (
   value TEXT NOT NULL,
   at INTEGER NOT NULL
 );
+
+-- آدرس اتصال Claude (MCP)؛ هر کاربر حداکثر یکی
+CREATE TABLE IF NOT EXISTS mcp_keys (
+  key_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL
+);

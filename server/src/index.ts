@@ -1,6 +1,7 @@
 // سرور یادنگار روی Cloudflare Workers + D1
 // ورود با ایمیل و کد یک‌بارمصرف، و همگام‌سازی کارها و تنظیمات بین دستگاه‌ها
 import { WorkerMailer } from "worker-mailer";
+import { createKey, handleMcp, keyStatus, revokeKey } from "./mcp";
 
 export interface Env {
   DB: D1Database;
@@ -291,8 +292,18 @@ async function sync(req: Request, env: Env, userId: string) {
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url);
+    const { pathname } = url;
+    // درگاه Claude (MCP) — آدرس شخصی هر کاربر
+    if (pathname === "/mcp" || pathname.startsWith("/mcp/")) {
+      try {
+        return await handleMcp(req, env, decodeURIComponent(pathname.slice(5)));
+      } catch (e) {
+        console.error(e);
+        return fail(500, "server_error");
+      }
+    }
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-    const { pathname } = new URL(req.url);
     try {
       if (pathname === "/" || pathname === "/health") return json({ ok: true, service: "yadnegar" });
       if (req.method !== "POST") return fail(405, "method_not_allowed");
@@ -303,6 +314,13 @@ export default {
         const userId = await authUser(req, env);
         if (!userId) return fail(401, "unauthorized");
         return await sync(req, env, userId);
+      }
+      if (pathname.startsWith("/connect/")) {
+        const userId = await authUser(req, env);
+        if (!userId) return fail(401, "unauthorized");
+        if (pathname === "/connect/create") return json(await createKey(env, userId, url.origin));
+        if (pathname === "/connect/revoke") return json(await revokeKey(env, userId));
+        if (pathname === "/connect/status") return json(await keyStatus(env, userId));
       }
       return fail(404, "not_found");
     } catch (e) {

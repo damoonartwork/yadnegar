@@ -1,7 +1,7 @@
 {
   "name": "yadnegar",
   "productName": "Yadnegar",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "یادنگار — لیست کارها با تقویم شمسی و یادآور",
   "main": "electron/main.cjs",
   "author": "Damoon",
