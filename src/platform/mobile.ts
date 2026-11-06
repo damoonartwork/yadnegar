@@ -84,6 +84,7 @@ async function reschedule() {
 function applyAction(taskId: string, action: "done" | "snooze10" | "snooze60") {
   const t = data.tasks.find((x) => x.id === taskId);
   if (!t) return;
+  t.updatedAt = Date.now();
   if (action === "done") t.done = true;
   else t.snoozedUntil = Date.now() + (action === "snooze10" ? 10 : 60) * 60_000;
   void persist();

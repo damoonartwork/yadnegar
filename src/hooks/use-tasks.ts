@@ -25,7 +25,9 @@ function legacySort(a: Task, b: Task) {
 }
 
 /** به کارهایی که هنوز ترتیب ندارند، ترتیب یکتا بده */
-function withOrder(tasks: Task[]): Task[] {
+function withOrder(input: Task[]): Task[] {
+  // کارهای قدیمی زمان ویرایش ندارند
+  const tasks = input.some((t) => !t.updatedAt) ? input.map((t) => (t.updatedAt ? t : { ...t, updatedAt: t.createdAt })) : input;
   if (tasks.every((t) => typeof t.order === "number")) return tasks;
   let max = Math.max(0, ...tasks.map((t) => t.order ?? 0));
   const missing = tasks.filter((t) => typeof t.order !== "number").sort(legacySort);
@@ -140,6 +142,7 @@ export function useTasks() {
           ...input,
           time: input.time || undefined,
           order: Math.max(0, ...prev.map((t) => t.order ?? 0)) + 1,
+          updatedAt: Date.now(),
         },
         ...prev,
       ]);
@@ -151,7 +154,7 @@ export function useTasks() {
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== id) return t;
-        const next = { ...t, ...patch };
+        const next = { ...t, ...patch, updatedAt: Date.now() };
         // اگر ساعت یا روز عوض شد، یادآوری دوباره فعال شود
         if (patch.time !== undefined || patch.date !== undefined) {
           next.notified = false;
@@ -173,7 +176,8 @@ export function useTasks() {
         .map((id) => byId.get(id)?.order ?? 0)
         .sort((a, b) => a - b);
       const next = new Map(ids.map((id, i) => [id, slots[i]]));
-      return prev.map((t) => (next.has(t.id) && t.order !== next.get(t.id) ? { ...t, order: next.get(t.id) } : t));
+      const now = Date.now();
+      return prev.map((t) => (next.has(t.id) && t.order !== next.get(t.id) ? { ...t, order: next.get(t.id), updatedAt: now } : t));
     });
   }, []);
 
@@ -188,14 +192,18 @@ export function useTasks() {
   const snooze = React.useCallback((id: string, minutes: number) => {
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === id ? { ...t, notified: false, snoozedUntil: Date.now() + minutes * 60_000 } : t
+        t.id === id ? { ...t, notified: false, snoozedUntil: Date.now() + minutes * 60_000, updatedAt: Date.now() } : t
       )
     );
     setReminders((prev) => prev.filter((r) => r.id !== id));
   }, []);
 
+  /** جایگزینی مستقیم (برای اعمال تغییرهای دستگاه‌های دیگر) */
+  const replaceTasks = React.useCallback((fn: (prev: Task[]) => Task[]) => setTasks(fn), []);
+
   return {
     tasks,
+    replaceTasks,
     settings,
     setSettings,
     loaded,

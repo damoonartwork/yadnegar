@@ -203,6 +203,7 @@ function applyReminderAction(id, action) {
   if (id !== "__test") {
     const t = data.tasks.find((x) => x.id === id);
     if (t) {
+      if (action === "done" || action === "snooze10" || action === "snooze60") t.updatedAt = Date.now();
       if (action === "done") t.done = true;
       if (action === "snooze10" || action === "snooze60") {
         t.snoozedUntil = Date.now() + (action === "snooze10" ? 10 : 60) * 60_000;

@@ -13,6 +13,7 @@ import { isNative } from "./platform/mobile";
 import { ReminderToasts } from "@/components/todo/reminder-toast";
 import { SettingsPanel } from "@/components/todo/settings-panel";
 import { useTasks } from "@/hooks/use-tasks";
+import { useSync } from "@/hooks/use-sync";
 import { Backdrop, imageIsLight, isLightTheme } from "@/components/todo/backdrop";
 
 /** موبایل: اپ اندروید یا پنجرهٔ باریک */
@@ -30,6 +31,7 @@ function useIsMobile() {
 
 export default function App() {
   const store = useTasks();
+  const sync = useSync(store);
   const { tasks } = store;
   const [selected, setSelected] = React.useState(new Date());
   const [filter, setFilter] = React.useState<Filter>("day");
@@ -109,6 +111,7 @@ export default function App() {
         settings={store.settings}
         onChange={store.setSettings}
         isDesktop={store.isDesktop}
+        sync={sync}
       />
     </>
   );

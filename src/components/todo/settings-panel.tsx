@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { toFa } from "@/lib/jalali";
 import { BG_PRESETS, imageIsLight, presetSwatch } from "./backdrop";
 import { UpdateSection } from "./update-section";
+import { AccountSection } from "./account-section";
+import type { SyncApi } from "@/hooks/use-sync";
 
 interface Props {
   open: boolean;
@@ -13,6 +15,7 @@ interface Props {
   settings: Settings;
   onChange: (s: Settings) => void;
   isDesktop: boolean;
+  sync: SyncApi;
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -113,7 +116,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
   </section>
 );
 
-export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: Props) {
+export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sync }: Props) {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const android = window.yadnegar?.platform === "android";
   const [perm, setPerm] = React.useState<{ notifications: boolean; exact: boolean } | null>(null);
@@ -257,8 +260,12 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
                 </Section>
               </div>
 
-              {/* ستون چپ: یادآوری و عمومی */}
+              {/* ستون چپ: حساب، یادآوری و عمومی */}
               <div className="space-y-5">
+                <Section title="حساب کاربری و همگام‌سازی">
+                  <AccountSection sync={sync} />
+                </Section>
+
                 {android ? (
                   <Section title="یادآوری">
                     <p className="px-1 text-[11px] leading-5 text-white/45">

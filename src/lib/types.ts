@@ -14,6 +14,8 @@ export interface Task {
   createdAt: number;
   /** ترتیب دستی کار در لیست (کوچک‌تر = بالاتر) */
   order?: number;
+  /** زمان آخرین ویرایش (برای همگام‌سازی بین دستگاه‌ها) */
+  updatedAt?: number;
 }
 
 export type BgPreset = "dots" | "glow" | "aurora" | "ocean" | "sunset" | "forest" | "graphite" | "paper" | "mist";
