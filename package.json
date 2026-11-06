@@ -16,6 +16,14 @@
     "release": "vite build && electron-builder --win nsis --publish always"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/browser": "^7.0.5",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/haptics": "^7.0.5",
+    "@capacitor/local-notifications": "^7.0.7",
+    "@capacitor/preferences": "^7.0.4",
+    "@capacitor/status-bar": "^7.0.6",
     "@fontsource-variable/vazirmatn": "^5.1.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -27,6 +35,7 @@
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.10",
     "@tailwindcss/vite": "^4.1.0",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",

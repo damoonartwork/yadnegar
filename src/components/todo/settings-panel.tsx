@@ -115,6 +115,8 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: Props) {
   const fileRef = React.useRef<HTMLInputElement>(null);
+  const android = window.yadnegar?.platform === "android";
+  const [perm, setPerm] = React.useState<{ notifications: boolean; exact: boolean } | null>(null);
   const set = (patch: Partial<Settings>) => onChange({ ...settings, ...patch });
 
   return (
@@ -124,7 +126,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-6"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-3 md:p-6"
           onClick={onClose}
         >
           <motion.div
@@ -142,7 +144,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
               </button>
             </div>
 
-            <div className="thin-scroll grid min-h-0 grid-cols-2 gap-6 overflow-y-auto px-6 pb-6">
+            <div className="thin-scroll grid min-h-0 grid-cols-1 gap-6 overflow-y-auto px-4 pb-6 md:grid-cols-2 md:px-6">
               {/* ستون راست: ظاهر */}
               <div className="space-y-5">
                 <Section title="شیشه">
@@ -257,37 +259,74 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
 
               {/* ستون چپ: یادآوری و عمومی */}
               <div className="space-y-5">
-                <Section title="یادآوری">
-                  <Row title="پنجرهٔ یادآوری یادنگار" hint="کارت شیشه‌ای گوشهٔ صفحه، روی همهٔ پنجره‌ها">
-                    <Toggle checked={settings.popupReminder} onChange={(v) => set({ popupReminder: v })} />
-                  </Row>
-                  <Row title="اعلان ویندوز" hint="اعلان کنار ساعت ویندوز (Action Center)">
-                    <Toggle checked={settings.windowsNotification} onChange={(v) => set({ windowsNotification: v })} />
-                  </Row>
-                  <Row title="صدای یادآوری">
-                    <Toggle checked={settings.sound} onChange={(v) => set({ sound: v })} />
-                  </Row>
-                  {isDesktop && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => window.yadnegar?.testNotification()}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white py-2.5 text-sm font-bold text-black hover:bg-white/90"
-                      >
-                        <BellRing className="h-4 w-4" />
-                        آزمایش یادآوری
-                      </button>
+                {android ? (
+                  <Section title="یادآوری">
+                    <p className="px-1 text-[11px] leading-5 text-white/45">
+                      یادآورها را خود اندروید سر ساعت نشان می‌دهد، حتی وقتی یادنگار بسته است. داخل اعلان دکمه‌های «انجام شد» و «۱۰ دقیقه بعد» هست.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        const r = await window.yadnegar?.requestNotificationPermission?.();
+                        setPerm(r ?? null);
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-white/[0.07] py-2.5 text-sm font-semibold shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] active:bg-white/[0.12]"
+                    >
+                      بررسی اجازهٔ اعلان
+                    </button>
+                    {perm && (
+                      <p className="px-1 text-[11px] leading-5 text-white/55">
+                        اعلان: {perm.notifications ? "مجاز ✓" : "غیرمجاز — از تنظیمات گوشی اجازه بده"} · هشدار دقیق: {perm.exact ? "مجاز ✓" : "غیرمجاز"}
+                      </p>
+                    )}
+                    {perm && !perm.exact && (
                       <button
                         onClick={() => window.yadnegar?.openNotificationSettings()}
-                        className="flex-1 rounded-full bg-white/[0.06] py-2.5 text-xs font-semibold text-white/75 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] hover:bg-white/[0.1]"
+                        className="w-full rounded-full bg-white/[0.06] py-2.5 text-xs font-semibold text-white/75 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)]"
                       >
-                        تنظیمات اعلان ویندوز
+                        اجازهٔ «هشدار و یادآوری دقیق»
                       </button>
-                    </div>
-                  )}
-                  <p className="px-1 text-[11px] leading-5 text-white/40">
-                    اگر اعلان ویندوز نمی‌آید، در تنظیمات اعلان ویندوز مطمئن شو اعلان‌های «Yadnegar» روشن است و Focus assist خاموش باشد. پنجرهٔ یادآوری یادنگار به این تنظیمات وابسته نیست.
-                  </p>
-                </Section>
+                    )}
+                    <button
+                      onClick={() => window.yadnegar?.testNotification()}
+                      className="flex w-full items-center justify-center gap-2 rounded-full bg-white py-2.5 text-sm font-bold text-black active:bg-white/90"
+                    >
+                      <BellRing className="h-4 w-4" />
+                      آزمایش اعلان (۳ ثانیه دیگر)
+                    </button>
+                  </Section>
+                ) : (
+                  <Section title="یادآوری">
+                    <Row title="پنجرهٔ یادآوری یادنگار" hint="کارت شیشه‌ای گوشهٔ صفحه، روی همهٔ پنجره‌ها">
+                      <Toggle checked={settings.popupReminder} onChange={(v) => set({ popupReminder: v })} />
+                    </Row>
+                    <Row title="اعلان ویندوز" hint="اعلان کنار ساعت ویندوز (Action Center)">
+                      <Toggle checked={settings.windowsNotification} onChange={(v) => set({ windowsNotification: v })} />
+                    </Row>
+                    <Row title="صدای یادآوری">
+                      <Toggle checked={settings.sound} onChange={(v) => set({ sound: v })} />
+                    </Row>
+                    {isDesktop && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => window.yadnegar?.testNotification()}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white py-2.5 text-sm font-bold text-black hover:bg-white/90"
+                        >
+                          <BellRing className="h-4 w-4" />
+                          آزمایش یادآوری
+                        </button>
+                        <button
+                          onClick={() => window.yadnegar?.openNotificationSettings()}
+                          className="flex-1 rounded-full bg-white/[0.06] py-2.5 text-xs font-semibold text-white/75 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] hover:bg-white/[0.1]"
+                        >
+                          تنظیمات اعلان ویندوز
+                        </button>
+                      </div>
+                    )}
+                    <p className="px-1 text-[11px] leading-5 text-white/40">
+                      اگر اعلان ویندوز نمی‌آید، در تنظیمات اعلان ویندوز مطمئن شو اعلان‌های «Yadnegar» روشن است و Focus assist خاموش باشد. پنجرهٔ یادآوری یادنگار به این تنظیمات وابسته نیست.
+                    </p>
+                  </Section>
+                )}
 
                 {isDesktop && (
                   <Section title="به‌روزرسانی">
@@ -295,6 +334,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
                   </Section>
                 )}
 
+                {!android && (
                 <Section title="عمومی">
                   <Row title="اجرا همراه ویندوز" hint="تا یادآورها همیشه کار کنند">
                     <Toggle checked={settings.autoStart} onChange={(v) => set({ autoStart: v })} />
@@ -303,6 +343,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop }: 
                     <Toggle checked={settings.closeToTray} onChange={(v) => set({ closeToTray: v })} />
                   </Row>
                 </Section>
+                )}
               </div>
             </div>
           </motion.div>

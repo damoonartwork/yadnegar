@@ -11,10 +11,12 @@ export interface AddTaskHandle {
 interface Props {
   /** روزی که کار به آن اضافه می‌شود (مثلاً «امروز» یا «۱۳ آبان») */
   dateLabel: string;
+  /** موبایل: متن راهنمای کوتاه‌تر */
+  touch?: boolean;
   onAdd: (v: { title: string; time?: string; important: boolean }) => void;
 }
 
-export const AddTask = React.forwardRef<AddTaskHandle, Props>(({ onAdd, dateLabel }, ref) => {
+export const AddTask = React.forwardRef<AddTaskHandle, Props>(({ onAdd, dateLabel, touch }, ref) => {
   const [title, setTitle] = React.useState("");
   const [time, setTime] = React.useState<string | undefined>();
   const [important, setImportant] = React.useState(false);
@@ -39,7 +41,8 @@ export const AddTask = React.forwardRef<AddTaskHandle, Props>(({ onAdd, dateLabe
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submit()}
-        placeholder="کار تازه‌ای بنویس و Enter بزن…"
+        placeholder={touch ? "کار تازه‌ای بنویس…" : "کار تازه‌ای بنویس و Enter بزن…"}
+        enterKeyHint="done"
         className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-white outline-none placeholder:text-white/35"
       />
       <span className="hidden items-center gap-1 text-xs text-white/40 sm:flex">

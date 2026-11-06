@@ -1,38 +1,31 @@
 import * as React from "react";
-import { AnimatePresence, Reorder, motion } from "motion/react";
-import { Sparkles } from "lucide-react";
 import { GlassCalendar, type DayMark } from "@/components/ui/glass-calendar";
-import { LiquidGlassButton } from "@/components/ui/liquid-glass-button";
 import { Glass } from "@/components/todo/glass";
 import { TitleBar } from "@/components/todo/title-bar";
 import { ClockCard } from "@/components/todo/clock-card";
 import { GregorianCard } from "@/components/todo/gregorian-card";
 import { NotesCard } from "@/components/todo/notes-card";
 import { UpcomingStrip } from "@/components/todo/upcoming-strip";
-import { AddTask, type AddTaskHandle } from "@/components/todo/add-task";
-import { TaskItem } from "@/components/todo/task-item";
+import type { AddTaskHandle } from "@/components/todo/add-task";
+import { TaskPanel, type Filter } from "@/components/todo/task-panel";
+import { MobileApp } from "./mobile-app";
+import { isNative } from "./platform/mobile";
 import { ReminderToasts } from "@/components/todo/reminder-toast";
 import { SettingsPanel } from "@/components/todo/settings-panel";
 import { useTasks } from "@/hooks/use-tasks";
-import { dayKey, jDay, longFa, monthName, toFa } from "@/lib/jalali";
-import { isSameDay } from "date-fns";
 import { Backdrop, imageIsLight, isLightTheme } from "@/components/todo/backdrop";
-import type { Task } from "@/lib/types";
 
-type Filter = "day" | "important" | "all";
-
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "day", label: "این روز" },
-  { id: "important", label: "مهم‌ها" },
-  { id: "all", label: "همه" },
-];
-
-/** ترتیب دستی؛ در نماهای چندروزه اول بر اساس روز */
-function sortTasks(byDate: boolean) {
-  return (a: Task, b: Task) => {
-    if (byDate && a.date !== b.date) return a.date < b.date ? -1 : 1;
-    return (a.order ?? 0) - (b.order ?? 0) || b.createdAt - a.createdAt;
-  };
+/** موبایل: اپ اندروید یا پنجرهٔ باریک */
+function useIsMobile() {
+  const query = "(max-width: 760px)";
+  const [narrow, setNarrow] = React.useState(() => window.matchMedia(query).matches);
+  React.useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return isNative() || narrow;
 }
 
 export default function App() {
@@ -43,7 +36,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const addRef = React.useRef<AddTaskHandle>(null);
 
-  const selectedKey = dayKey(selected);
+  const mobile = useIsMobile();
 
   const marks = React.useMemo(() => {
     const m: Record<string, DayMark> = {};
@@ -55,27 +48,7 @@ export default function App() {
     return m;
   }, [tasks]);
 
-  const visible = React.useMemo(() => {
-    let list = tasks;
-    if (filter === "day") list = tasks.filter((t) => t.date === selectedKey);
-    else if (filter === "important") list = tasks.filter((t) => t.important && !t.done);
-    return [...list].sort(sortTasks(filter !== "day"));
-  }, [tasks, filter, selectedKey]);
-
-  // در حین کشیدن، ترتیب موقت محلی است و با رها کردن ذخیره می‌شود
-  const [dragList, setDragList] = React.useState<Task[] | null>(null);
-  const dragRef = React.useRef<Task[] | null>(null);
-  const shown = dragList ?? visible;
-  const canDrag = filter === "day" && visible.length > 1;
-  const commitDrag = () => {
-    if (dragRef.current) store.reorderTasks(dragRef.current.map((t) => t.id));
-    dragRef.current = null;
-    setDragList(null);
-  };
-
-  const dayTasks = tasks.filter((t) => t.date === selectedKey);
-  const doneCount = dayTasks.filter((t) => t.done).length;
-  const progress = dayTasks.length ? doneCount / dayTasks.length : 0;
+  const closeSettings = React.useCallback(() => setSettingsOpen(false), []);
 
   const pickDate = (d: Date) => {
     setSelected(d);
@@ -95,6 +68,7 @@ export default function App() {
   const light = isLightTheme(store.settings);
   React.useEffect(() => {
     document.documentElement.classList.toggle("theme-light", light);
+    void window.yadnegar?.setStatusBar?.(light);
   }, [light]);
 
   // برای عکس‌هایی که قبلاً انتخاب شده‌اند، روشن بودن را یک بار بسنج
@@ -117,6 +91,48 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  const overlays = (
+    <>
+      <ReminderToasts
+        reminders={store.reminders}
+        onDone={(id) => {
+          store.updateTask(id, { done: true });
+          store.dismissReminder(id);
+        }}
+        onSnooze={store.snooze}
+        onDismiss={store.dismissReminder}
+      />
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={store.settings}
+        onChange={store.setSettings}
+        isDesktop={store.isDesktop}
+      />
+    </>
+  );
+
+  if (mobile) {
+    return (
+      <>
+        <Backdrop settings={store.settings} />
+        <MobileApp
+          store={store}
+          selected={selected}
+          pickDate={pickDate}
+          filter={filter}
+          setFilter={setFilter}
+          marks={marks}
+          addRef={addRef}
+          onSettings={() => setSettingsOpen(true)}
+          settingsOpen={settingsOpen}
+          closeSettings={closeSettings}
+        />
+        {overlays}
+      </>
+    );
+  }
 
   return (
     <div dir="rtl" className="flex h-full flex-col">
@@ -154,107 +170,12 @@ export default function App() {
 
         <section className="col-start-2 row-span-3 row-start-2 flex min-h-0 min-w-0 flex-col">
           <Glass className="min-h-0 flex-1" contentClassName="flex h-full flex-col p-6">
-            <div className="mb-5 flex shrink-0 items-start justify-between gap-4">
-              <div>
-                <h1 className="glow-text text-2xl font-bold">
-                  {filter === "day" ? longFa(selected) : filter === "important" ? "کارهای مهم" : "همهٔ کارها"}
-                </h1>
-                <div className="mt-2 flex h-4 items-center gap-2">
-                  {filter === "day" && dayTasks.length > 0 && (
-                    <>
-                      <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
-                        <motion.div
-                          className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.6)]"
-                          animate={{ width: `${progress * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-white/45">
-                        {toFa(doneCount)} از {toFa(dayTasks.length)} انجام شد
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {FILTERS.map((f) => (
-                  <LiquidGlassButton key={f.id} size="sm" active={filter === f.id} onClick={() => setFilter(f.id)}>
-                    {f.label}
-                  </LiquidGlassButton>
-                ))}
-              </div>
-            </div>
-
-            <Reorder.Group
-              as="ul"
-              axis="y"
-              layoutScroll
-              values={shown}
-              onReorder={(list) => {
-                dragRef.current = list;
-                setDragList(list);
-              }}
-              className="thin-scroll -mx-2 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2"
-            >
-              <AnimatePresence initial={false}>
-                {shown.map((t, i) => (
-                  <TaskItem
-                    key={t.id}
-                    task={t}
-                    index={i}
-                    draggable={canDrag}
-                    onDragEnd={commitDrag}
-                    showDate={filter !== "day"}
-                    onToggle={() => store.updateTask(t.id, { done: !t.done })}
-                    onImportant={() => store.updateTask(t.id, { important: !t.important })}
-                    onRemove={() => store.removeTask(t.id)}
-                    onEdit={(patch) => store.updateTask(t.id, patch)}
-                  />
-                ))}
-              </AnimatePresence>
-              {store.loaded && visible.length === 0 && (
-                <motion.li
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-white/35"
-                >
-                  <Sparkles className="h-7 w-7" />
-                  <p className="text-sm">{filter === "important" ? "کار مهم باقی‌مانده‌ای نداری" : "برای این روز کاری نیست"}</p>
-                  <p className="text-xs text-white/25">از کادر پایین یک کار اضافه کن (Ctrl+N)</p>
-                </motion.li>
-              )}
-            </Reorder.Group>
-
-            <div className="mt-4 shrink-0">
-              <AddTask
-                ref={addRef}
-                dateLabel={isSameDay(selected, new Date()) ? "امروز" : `${toFa(jDay(selected))} ${monthName(selected)}`}
-                onAdd={(v) => {
-                  store.addTask({ ...v, date: selectedKey });
-                  if (filter !== "day") setFilter("day");
-                }}
-              />
-            </div>
+            <TaskPanel store={store} selected={selected} filter={filter} setFilter={setFilter} addRef={addRef} />
           </Glass>
         </section>
       </main>
 
-      <ReminderToasts
-        reminders={store.reminders}
-        onDone={(id) => {
-          store.updateTask(id, { done: true });
-          store.dismissReminder(id);
-        }}
-        onSnooze={store.snooze}
-        onDismiss={store.dismissReminder}
-      />
-
-      <SettingsPanel
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        settings={store.settings}
-        onChange={store.setSettings}
-        isDesktop={store.isDesktop}
-      />
+      {overlays}
     </div>
   );
 }

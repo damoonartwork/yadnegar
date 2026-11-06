@@ -21,7 +21,18 @@ function relativeLabel(d: Date) {
 }
 
 /** نوار یادآورهای پیش رو — مثل کارت پیش‌بینی ساعتی در عکس اول */
-export function UpcomingStrip({ tasks, onPick, className }: { tasks: Task[]; onPick: (d: Date) => void; className?: string }) {
+export function UpcomingStrip({
+  tasks,
+  onPick,
+  className,
+  scroll,
+}: {
+  tasks: Task[];
+  onPick: (d: Date) => void;
+  className?: string;
+  /** موبایل: کارت‌ها افقی اسکرول شوند */
+  scroll?: boolean;
+}) {
   const items = React.useMemo(() => {
     const now = Date.now();
     return tasks
@@ -34,19 +45,22 @@ export function UpcomingStrip({ tasks, onPick, className }: { tasks: Task[]; onP
     <Glass className={className} contentClassName="flex h-full flex-col px-5 py-4">
       <p className="mb-1 text-xs font-bold text-white/40">یادآورهای پیش رو</p>
       {items.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-white/40">
+        <div className={cn("flex flex-1 items-center justify-center gap-2 text-center text-sm text-white/40", scroll && "py-6")}>
           <CalendarClock className="h-5 w-5" />
           برای کارهایت ساعت یادآوری بگذار تا اینجا ببینی
         </div>
       ) : (
-        <div className="grid flex-1 grid-cols-6 gap-2">
+        <div className={cn(scroll ? "scrollbar-hide -mx-2 flex gap-2 overflow-x-auto px-2 py-1" : "grid flex-1 grid-cols-6 gap-2")}>
           {items.map((t) => {
             const d = new Date(dueAt(t)!);
             return (
               <button
                 key={t.id}
                 onClick={() => onPick(d)}
-                className="flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-1 transition-colors hover:bg-white/[0.06]"
+                className={cn(
+                  "flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-1 transition-colors hover:bg-white/[0.06]",
+                  scroll && "w-[118px] shrink-0 bg-white/[0.04] py-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]"
+                )}
                 title={t.title}
               >
                 <span className="whitespace-nowrap text-[13px] font-semibold">

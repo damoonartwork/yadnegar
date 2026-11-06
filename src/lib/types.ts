@@ -84,6 +84,10 @@ export interface UpdateStatus {
 }
 
 export interface YadnegarAPI {
+  /** نسخهٔ ویندوز تعریف نمی‌کند؛ اندروید "android" */
+  platform?: "android";
+  requestNotificationPermission?(): Promise<{ notifications: boolean; exact: boolean }>;
+  setStatusBar?(light: boolean): Promise<void>;
   load(): Promise<AppData>;
   saveTasks(tasks: Task[]): Promise<void>;
   saveSettings(settings: Settings): Promise<void>;
