@@ -49,7 +49,11 @@ export interface Settings {
   quickNote: string;
   /** منطقهٔ زمانی کارت ساعت میلادی (IANA) */
   worldZone: string;
+  /** اندازهٔ کل برنامه (فقط ویندوز) */
+  uiScale?: UiScale;
 }
+
+export type UiScale = "small" | "medium" | "large";
 
 export const DEFAULT_SETTINGS: Settings = {
   autoStart: true,

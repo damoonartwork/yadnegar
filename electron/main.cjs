@@ -250,6 +250,13 @@ function createWindow(forceShow = false) {
   });
 
   win.loadFile(INDEX_HTML);
+  win.webContents.on("did-finish-load", applyZoom);
+  win.once("ready-to-show", applyShape);
+  win.on("resize", scheduleShape);
+  win.on("maximize", applyShape);
+  win.on("unmaximize", applyShape);
+  win.on("enter-full-screen", applyShape);
+  win.on("leave-full-screen", applyShape);
 
   const startHidden = process.argv.includes("--hidden") && !forceShow;
   win.once("ready-to-show", () => {
@@ -396,10 +403,65 @@ ipcMain.handle("save-tasks", (_e, tasks) => {
   }
 });
 ipcMain.handle("save-settings", (_e, settings) => {
+  const prevScale = data.settings.uiScale;
   data.settings = { ...data.settings, ...settings };
   saveData();
   applyAutoStart();
+  if (data.settings.uiScale !== prevScale) applyZoom();
 });
+
+// ---------- اندازهٔ برنامه (کوچک / متوسط / بزرگ) ----------
+const ZOOM = { small: 0.88, medium: 1, large: 1.12 };
+const BASE_MIN = [1000, 790];
+function applyZoom() {
+  if (!win || win.isDestroyed()) return;
+  const z = ZOOM[data.settings.uiScale] || 1;
+  win.webContents.setZoomFactor(z);
+  // حداقل اندازهٔ پنجره هم به همان نسبت، ولی نه بزرگ‌تر از صفحه‌نمایش
+  const { width: aw, height: ah } = screen.getDisplayMatching(win.getBounds()).workAreaSize;
+  const mw = Math.min(Math.round(BASE_MIN[0] * z), aw);
+  const mh = Math.min(Math.round(BASE_MIN[1] * z), ah);
+  win.setMinimumSize(mw, mh);
+  if (!win.isMaximized() && !win.isFullScreen()) {
+    const [w, h] = win.getSize();
+    if (w < mw || h < mh) {
+      win.setSize(Math.max(w, mw), Math.max(h, mh));
+      win.center();
+    }
+  }
+}
+
+// ---------- لبه‌های گرد پنجره ----------
+// ویندوز ۱۱ خودش گوشه‌های پنجرهٔ بدون قاب را گرد می‌کند؛ برای ویندوز ۱۰ با شکل پنجره گردش می‌کنیم.
+const WIN11 = process.platform === "win32" && Number(require("os").release().split(".")[2] || 0) >= 22000;
+const RADIUS = 10;
+let shapeTimer = null;
+function scheduleShape() {
+  clearTimeout(shapeTimer);
+  shapeTimer = setTimeout(applyShape, 30);
+}
+function applyShape() {
+  if (process.platform !== "win32" || WIN11 || !win || win.isDestroyed()) return;
+  try {
+    if (win.isMaximized() || win.isFullScreen()) {
+      win.setShape([]);
+      return;
+    }
+    const [w, h] = win.getContentSize();
+    const r = RADIUS;
+    const rects = [];
+    for (let y = 0; y < r; y++) {
+      const dy = r - y - 0.5;
+      const inset = Math.round(r - Math.sqrt(r * r - dy * dy));
+      rects.push({ x: inset, y, width: w - 2 * inset, height: 1 });
+      rects.push({ x: inset, y: h - 1 - y, width: w - 2 * inset, height: 1 });
+    }
+    rects.push({ x: 0, y: r, width: w, height: h - 2 * r });
+    win.setShape(rects);
+  } catch (e) {
+    console.error("setShape failed", e);
+  }
+}
 ipcMain.handle("toggle-pin", () => {
   if (!win) return false;
   const next = !win.isAlwaysOnTop();

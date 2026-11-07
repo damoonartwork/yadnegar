@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, BellRing, ImagePlus, Palette, RotateCcw, SlidersHorizontal, UserRound, X } from "lucide-react";
-import { DEFAULT_SETTINGS, type BgPreset, type Settings, type ThemeMode } from "@/lib/types";
+import { DEFAULT_SETTINGS, type BgPreset, type Settings, type ThemeMode, type UiScale } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toFa } from "@/lib/jalali";
 import { BG_PRESETS, imageIsLight, presetSwatch } from "./backdrop";
@@ -81,23 +81,40 @@ function Slider({
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
-    <div className="px-3.5 py-2.5">
-      <div className="mb-1.5 flex items-center justify-between text-[13px]">
-        <span className="font-semibold">{label}</span>
-        <span className="text-[11px] text-white/45">
-          {toFa(value)}
-          {unit}
-        </span>
-      </div>
+    <div className="flex items-center gap-3 px-3.5 py-2.5">
+      <span className="w-28 shrink-0 text-[12.5px] font-semibold">{label}</span>
       <input
         type="range"
         min={min}
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="yg-range w-full"
+        className="yg-range min-w-0 flex-1"
         style={{ "--pct": `${pct}%` } as React.CSSProperties}
       />
+      <span className="w-11 shrink-0 text-left text-[11px] text-white/45" dir="ltr">
+        {toFa(value)}
+        {unit}
+      </span>
+    </div>
+  );
+}
+
+function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { id: T; label: string }[]; onChange: (v: T) => void }) {
+  return (
+    <div className="flex gap-1 rounded-full bg-black/25 p-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          onClick={() => onChange(o.id)}
+          className={cn(
+            "flex-1 rounded-full py-1.5 text-xs transition-colors",
+            value === o.id ? "bg-white font-bold text-black shadow-md" : "font-semibold text-white/60 hover:text-white"
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -152,6 +169,8 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
   const [perm, setPerm] = React.useState<{ notifications: boolean; exact: boolean } | null>(null);
   const [tab, setTabState] = React.useState<TabId>(readTab);
   const set = (patch: Partial<Settings>) => onChange({ ...settings, ...patch });
+  // اندازهٔ برنامه فعلاً فقط در نسخهٔ ویندوز
+  const showSize = isDesktop && !android;
 
   const setTab = (t: TabId) => {
     setTabState(t);
@@ -171,29 +190,33 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
 
   // ---------- محتوای هر زبانه ----------
   const look = (
-    <div className="space-y-5">
-      <Section title="حالت رنگ">
-        <div className="flex gap-1 rounded-full bg-black/25 p-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-          {(
-            [
+    <div className="space-y-4">
+      <div className={cn("grid gap-4", showSize && "grid-cols-2")}>
+        <Section title="حالت رنگ">
+          <Segmented
+            value={(settings.theme ?? "auto") as ThemeMode}
+            options={[
               { id: "auto", label: "خودکار" },
               { id: "dark", label: "تیره" },
               { id: "light", label: "روشن" },
-            ] as { id: ThemeMode; label: string }[]
-          ).map((o) => (
-            <button
-              key={o.id}
-              onClick={() => set({ theme: o.id })}
-              className={cn(
-                "flex-1 rounded-full py-1.5 text-xs transition-colors",
-                (settings.theme ?? "auto") === o.id ? "bg-white font-bold text-black shadow-md" : "font-semibold text-white/60 hover:text-white"
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      </Section>
+            ]}
+            onChange={(v) => set({ theme: v })}
+          />
+        </Section>
+        {showSize && (
+          <Section title="اندازهٔ برنامه">
+            <Segmented
+              value={(settings.uiScale ?? "medium") as UiScale}
+              options={[
+                { id: "small", label: "کوچک" },
+                { id: "medium", label: "متوسط" },
+                { id: "large", label: "بزرگ" },
+              ]}
+              onChange={(v) => set({ uiScale: v })}
+            />
+          </Section>
+        )}
+      </div>
 
       <Section
         title="پس‌زمینه"
@@ -215,7 +238,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
             >
               <span
                 className={cn(
-                  "h-10 w-full rounded-xl border transition-all",
+                  "h-9 w-full rounded-xl border transition-all",
                   settings.background === p ? "border-white ring-2 ring-white/25" : "border-white/10 group-hover:border-white/30"
                 )}
                 style={{
@@ -235,7 +258,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
           >
             <span
               className={cn(
-                "grid h-10 w-full place-items-center rounded-xl border bg-cover bg-center transition-all",
+                "grid h-9 w-full place-items-center rounded-xl border bg-cover bg-center transition-all",
                 settings.background === "image" ? "border-white ring-2 ring-white/25" : "border-dashed border-white/25 group-hover:border-white/40"
               )}
               style={settings.bgImage ? { backgroundImage: `url(${settings.bgImage})` } : undefined}
@@ -258,13 +281,10 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
             set({ background: "image", bgImage: data, bgImageLight: await imageIsLight(data) });
           }}
         />
-        <Group>
-          <Slider label="تیره‌کردن پس‌زمینه" value={settings.bgDim} min={0} max={80} unit="٪" onChange={(v) => set({ bgDim: v })} />
-        </Group>
       </Section>
 
       <Section
-        title="شیشه"
+        title="شیشه و پس‌زمینه"
         action={
           <button
             onClick={() => set({ glassBlur: DEFAULT_SETTINGS.glassBlur, glassTint: DEFAULT_SETTINGS.glassTint, glassEdge: DEFAULT_SETTINGS.glassEdge })}
@@ -279,6 +299,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
           <Slider label="تاری پشت شیشه" value={settings.glassBlur} min={0} max={60} unit=" px" onChange={(v) => set({ glassBlur: v })} />
           <Slider label="رنگ و مات بودن" value={settings.glassTint} min={0} max={30} unit="٪" onChange={(v) => set({ glassTint: v })} />
           <Slider label="درخشش لبه‌ها" value={settings.glassEdge} min={0} max={100} unit="٪" onChange={(v) => set({ glassEdge: v })} />
+          <Slider label="تیره‌کردن پس‌زمینه" value={settings.bgDim} min={0} max={80} unit="٪" onChange={(v) => set({ bgDim: v })} />
         </Group>
       </Section>
     </div>
