@@ -48,6 +48,12 @@ jobs:
           cat out.json; echo
           { echo '### Voice smoke'; echo '```json'; cat out.json; echo; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           grep -q '"tasks"' out.json
+      - name: Call /voice with text only
+        run: |
+          printf '%s' "فردا ساعت ده صبح جلسه با علی دارم. امروز باید دامنه جدید بخرم، خیلی مهمه. پنجشنبه تیزر فاطمیه رو تحویل بدم و ساعت ۵ عصر به ارغوان زنگ بزنم." > t.txt
+          curl -sS -X POST "$SERVER/voice" -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/plain; charset=utf-8" \
+            --data-binary @t.txt -o out2.json -w "HTTP %{http_code} in %{time_total}s\n"
+          cat out2.json; echo
       - name: Clean up
         if: always()
         run: |

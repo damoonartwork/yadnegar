@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - "server/**"
       - ".github/workflows/deploy-server.yml"
+      - ".github/workflows/voice-smoke.yml"
   workflow_dispatch:
 
 permissions:
