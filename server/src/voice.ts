@@ -188,6 +188,20 @@ async function toTasks(env: Env, text: string): Promise<VoiceTask[]> {
 }
 
 export async function handleVoice(req: Request, env: Env, userId: string) {
+  // متن آماده (بدون صدا): فقط جدا کردن کارها
+  if ((req.headers.get("Content-Type") || "").startsWith("text/plain")) {
+    const text = (await req.text()).trim().slice(0, 4000);
+    if (!text) throw new VoiceError("voice_empty");
+    const remaining = await takeQuota(env, userId);
+    try {
+      const t0 = Date.now();
+      const tasks = await toTasks(env, text);
+      return { text, tasks, remaining, ms: Date.now() - t0 };
+    } catch (e) {
+      await refundQuota(env, userId);
+      throw e;
+    }
+  }
   const buf = new Uint8Array(await req.arrayBuffer());
   if (buf.length < 2000) throw new VoiceError("voice_empty");
   if (buf.length > MAX_BYTES) throw new VoiceError("voice_too_long", 413);
