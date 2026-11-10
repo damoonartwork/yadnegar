@@ -2,9 +2,11 @@
 // ورود با ایمیل و کد یک‌بارمصرف، و همگام‌سازی کارها و تنظیمات بین دستگاه‌ها
 import { WorkerMailer } from "worker-mailer";
 import { createKey, handleMcp, keyStatus, revokeKey } from "./mcp";
+import { handleVoice, VoiceError, voiceStatus } from "./voice";
 
 export interface Env {
   DB: D1Database;
+  AI?: Ai;
   SMTP_HOST?: string;
   SMTP_PORT?: string;
   SMTP_USER?: string;
@@ -315,6 +317,12 @@ export default {
         if (!userId) return fail(401, "unauthorized");
         return await sync(req, env, userId);
       }
+      if (pathname === "/voice" || pathname === "/voice/status") {
+        const userId = await authUser(req, env);
+        if (!userId) return fail(401, "unauthorized");
+        if (pathname === "/voice/status") return json(await voiceStatus(env, userId));
+        return json(await handleVoice(req, env, userId));
+      }
       if (pathname.startsWith("/connect/")) {
         const userId = await authUser(req, env);
         if (!userId) return fail(401, "unauthorized");
@@ -324,6 +332,7 @@ export default {
       }
       return fail(404, "not_found");
     } catch (e) {
+      if (e instanceof VoiceError) return fail(e.status, e.code);
       console.error(e);
       return fail(500, "server_error");
     }

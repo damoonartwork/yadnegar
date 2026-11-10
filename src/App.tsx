@@ -12,6 +12,7 @@ import { MobileApp } from "./mobile-app";
 import { isNative } from "./platform/mobile";
 import { ReminderToasts } from "@/components/todo/reminder-toast";
 import { SettingsPanel } from "@/components/todo/settings-panel";
+import { VoiceDialog } from "@/components/todo/voice-dialog";
 import { useTasks } from "@/hooks/use-tasks";
 import { useSync } from "@/hooks/use-sync";
 import { Backdrop, imageIsLight, isLightTheme } from "@/components/todo/backdrop";
@@ -36,6 +37,7 @@ export default function App() {
   const [selected, setSelected] = React.useState(new Date());
   const [filter, setFilter] = React.useState<Filter>("day");
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [voiceOpen, setVoiceOpen] = React.useState(false);
   const addRef = React.useRef<AddTaskHandle>(null);
 
   const mobile = useIsMobile();
@@ -94,6 +96,22 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // دکمهٔ میکروفون کادر «کار تازه»
+  React.useEffect(() => {
+    const on = () => setVoiceOpen(true);
+    window.addEventListener("yadnegar:voice", on);
+    return () => window.removeEventListener("yadnegar:voice", on);
+  }, []);
+
+  // اندازهٔ برنامه روی گوشی (در ویندوز با zoom خود Electron انجام می‌شود)
+  const uiScale = store.settings.uiScale ?? "medium";
+  React.useEffect(() => {
+    if (window.yadnegar?.platform !== "android") return;
+    const z = uiScale === "small" ? 0.88 : uiScale === "large" ? 1.12 : 1;
+    document.documentElement.style.setProperty("--ui-zoom", String(z));
+    document.documentElement.classList.toggle("ui-zoomed", z !== 1);
+  }, [uiScale]);
+
   const overlays = (
     <>
       <ReminderToasts
@@ -112,6 +130,21 @@ export default function App() {
         onChange={store.setSettings}
         isDesktop={store.isDesktop}
         sync={sync}
+      />
+      <VoiceDialog
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        sync={sync}
+        onAdd={(list) => list.forEach((t) => store.addTask({ title: t.title, date: t.date, time: t.time, important: t.important }))}
+        onNeedAccount={() => {
+          setVoiceOpen(false);
+          try {
+            localStorage.setItem("yadnegar-settings-tab", "account");
+          } catch {
+            /* ignore */
+          }
+          setSettingsOpen(true);
+        }}
       />
     </>
   );

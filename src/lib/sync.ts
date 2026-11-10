@@ -182,3 +182,28 @@ export const connectStatus = (server: string, token: string) =>
   call<{ active: boolean; createdAt: number | null }>(server, "/connect/status", {}, token);
 export const connectCreate = (server: string, token: string) => call<{ url: string }>(server, "/connect/create", {}, token);
 export const connectRevoke = (server: string, token: string) => call<{ ok: true }>(server, "/connect/revoke", {}, token);
+
+// ---------- ویس ----------
+export interface VoiceTask {
+  title: string;
+  date: string;
+  time?: string;
+  important: boolean;
+}
+
+export async function voiceToTasks(server: string, token: string, wav: Blob) {
+  let res: Response;
+  try {
+    res = await fetch(server.replace(/\/+$/, "") + "/voice", {
+      method: "POST",
+      headers: { "Content-Type": "audio/wav", Authorization: `Bearer ${token}` },
+      body: wav,
+      cache: "no-store",
+    });
+  } catch {
+    throw new SyncError("network");
+  }
+  const data = (await res.json().catch(() => ({}))) as { error?: string; text?: string; tasks?: VoiceTask[]; remaining?: number };
+  if (!res.ok) throw new SyncError(data.error || `http_${res.status}`, res.status);
+  return { text: data.text ?? "", tasks: data.tasks ?? [], remaining: data.remaining ?? 0 };
+}

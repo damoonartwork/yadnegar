@@ -1,0 +1,55 @@
+# آزمایش دستی ویس روی سرور واقعی: یک جملهٔ فارسی با espeak ساخته و به /voice فرستاده می‌شود.
+# کاربر آزمایشی بعد از آزمایش پاک می‌شود.
+name: Voice smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      sentence:
+        description: "Persian sentence to speak"
+        required: false
+        default: "فردا ساعت ده صبح جلسه با علی دارم. امروز باید دامنه جدید بخرم، خیلی مهمه. پنجشنبه تیزر رو تحویل بدم."
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SERVER: https://yadnegar-api.damoon-artwork.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Make speech
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg >/dev/null
+          espeak-ng -v fa -s 130 -w raw.wav "${{ inputs.sentence }}"
+          ffmpeg -loglevel error -y -i raw.wav -ac 1 -ar 16000 say.wav
+          ls -la say.wav
+      - name: Create test session
+        run: |
+          TOKEN=$(openssl rand -hex 24)
+          HASH=$(printf '%s' "$TOKEN" | sha256sum | cut -d' ' -f1)
+          NOW=$(date +%s000)
+          echo "TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          npx wrangler d1 execute yadnegar --remote --yes --command \
+            "INSERT OR REPLACE INTO users (id, email, created_at) VALUES ('smoke-test', 'smoke@yadnegar.invalid', $NOW); INSERT INTO sessions (token_hash, user_id, device, created_at, last_seen) VALUES ('$HASH', 'smoke-test', 'ci', $NOW, $NOW);" >/dev/null
+      - name: Call /voice
+        run: |
+          curl -sS -X POST "$SERVER/voice" -H "Authorization: Bearer $TOKEN" -H "Content-Type: audio/wav" \
+            --data-binary @say.wav -o out.json -w "HTTP %{http_code} in %{time_total}s\n"
+          cat out.json; echo
+          { echo '### Voice smoke'; echo '```json'; cat out.json; echo; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          grep -q '"tasks"' out.json
+      - name: Clean up
+        if: always()
+        run: |
+          npx wrangler d1 execute yadnegar --remote --yes --command \
+            "DELETE FROM sessions WHERE user_id = 'smoke-test'; DELETE FROM voice_usage WHERE user_id = 'smoke-test'; DELETE FROM tasks WHERE user_id = 'smoke-test'; DELETE FROM users WHERE id = 'smoke-test';" >/dev/null

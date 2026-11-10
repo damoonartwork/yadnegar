@@ -33,16 +33,16 @@ const enDigits = (s: string) =>
   s.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 
 /** تاریخ امروز به وقت ایران، به شکل YYYY-MM-DD میلادی */
-function todayKey(): string {
+export function todayKey(): string {
   const p = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   return p; // en-CA → 2026-11-06
 }
 
-function nowTime(): string {
+export function nowTime(): string {
   return new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
 }
 
-function weekday(key: string) {
+export function weekday(key: string) {
   const [y, m, d] = key.split("-").map(Number);
   return WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
 }
@@ -53,14 +53,14 @@ function describeDate(key: string) {
   return `${weekday(key)} ${j.jd} ${MONTHS[j.jm - 1]} ${j.jy} (${j.jy}/${pad(j.jm)}/${pad(j.jd)} شمسی، ${key} میلادی)`;
 }
 
-function addDays(key: string, n: number) {
+export function addDays(key: string, n: number) {
   const [y, m, d] = key.split("-").map(Number);
   const t = new Date(Date.UTC(y, m - 1, d + n));
   return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
 }
 
 /** تاریخ ورودی: شمسی (۱۴۰۵/۰۸/۱۶) یا میلادی (2026-11-06) یا today/tomorrow → کلید میلادی */
-function parseDate(input: unknown): string {
+export function parseDate(input: unknown): string {
   if (typeof input !== "string" || !input.trim()) throw new ToolError("تاریخ لازم است (مثلاً 1405/08/16 یا 2026-11-06).");
   const s = enDigits(input.trim().toLowerCase());
   if (s === "today" || s === "امروز") return todayKey();
@@ -78,7 +78,7 @@ function parseDate(input: unknown): string {
   return `${y}-${pad(mo)}-${pad(d)}`;
 }
 
-function parseTime(input: unknown): string | undefined {
+export function parseTime(input: unknown): string | undefined {
   if (input === undefined || input === null || input === "") return undefined;
   if (typeof input !== "string") throw new ToolError("ساعت باید متن باشد، مثل 14:30.");
   const m = /^(\d{1,2}):(\d{2})$/.exec(enDigits(input.trim()));

@@ -62,3 +62,11 @@ CREATE TABLE IF NOT EXISTS mcp_keys (
   user_id TEXT NOT NULL UNIQUE,
   created_at INTEGER NOT NULL
 );
+
+-- سهمیهٔ روزانهٔ ویس برای هر کاربر (day = تاریخ میلادی به وقت ایران)
+CREATE TABLE IF NOT EXISTS voice_usage (
+  user_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, day)
+);

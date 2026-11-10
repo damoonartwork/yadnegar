@@ -169,8 +169,13 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
   const [perm, setPerm] = React.useState<{ notifications: boolean; exact: boolean } | null>(null);
   const [tab, setTabState] = React.useState<TabId>(readTab);
   const set = (patch: Partial<Settings>) => onChange({ ...settings, ...patch });
-  // اندازهٔ برنامه فعلاً فقط در نسخهٔ ویندوز
-  const showSize = isDesktop && !android;
+  // اندازهٔ برنامه: ویندوز و اندروید
+  const showSize = isDesktop;
+
+  // با هر باز شدن، آخرین زبانه (یا زبانه‌ای که بیرون تعیین شده) خوانده شود
+  React.useEffect(() => {
+    if (open) setTabState(readTab());
+  }, [open]);
 
   const setTab = (t: TabId) => {
     setTabState(t);

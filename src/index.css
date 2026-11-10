@@ -173,3 +173,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background-color: rgb(255 255 255 / calc(var(--g-tint) + 0.45));
   box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.8), 0 8px 24px rgba(0, 0, 0, 0.12);
 }
+
+/* فهرست کشویی تاریخ در پنجرهٔ ویس */
+.yg-select { -webkit-appearance: none; appearance: none; cursor: pointer; }
+.yg-select option { background: #1b1b1f; color: #fff; }
+.theme-light .yg-select option { background: #fff; color: #16161a; }
+
+/* اندازهٔ برنامه روی گوشی */
+html.ui-zoomed #root { zoom: var(--ui-zoom); }

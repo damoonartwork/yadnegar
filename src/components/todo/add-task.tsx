@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalendarDays, Plus, Star } from "lucide-react";
+import { CalendarDays, Mic, Plus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LiquidGlassButton } from "@/components/ui/liquid-glass-button";
 import { PersianTimePicker } from "@/components/ui/persian-time-picker";
@@ -49,6 +49,13 @@ export const AddTask = React.forwardRef<AddTaskHandle, Props>(({ onAdd, dateLabe
         <CalendarDays className="h-3.5 w-3.5" />
         {dateLabel}
       </span>
+      <LiquidGlassButton
+        size="icon-sm"
+        title="افزودن با صدا"
+        onClick={() => window.dispatchEvent(new CustomEvent("yadnegar:voice"))}
+      >
+        <Mic className="h-4 w-4" />
+      </LiquidGlassButton>
       <PersianTimePicker value={time} onChange={setTime} compact />
       <LiquidGlassButton
         size="icon-sm"
