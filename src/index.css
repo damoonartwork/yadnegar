@@ -59,6 +59,8 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 /* ---------- شیشهٔ مایع قابل تنظیم ---------- */
 .yg-glass {
   background-color: rgb(255 255 255 / var(--g-tint));
+  /* تیره‌کردن فقط شیشه‌ها */
+  background-image: linear-gradient(rgb(0 0 0 / var(--g-dark, 0)), rgb(0 0 0 / var(--g-dark, 0)));
 }
 .yg-glass [data-layer="bend"] {
   -webkit-backdrop-filter: blur(var(--g-blur)) saturate(160%);
@@ -165,6 +167,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .is-mobile body { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
 .yg-glass-bar {
   background-color: rgb(255 255 255 / calc(var(--g-tint) + 0.04));
+  background-image: linear-gradient(rgb(0 0 0 / var(--g-dark, 0)), rgb(0 0 0 / var(--g-dark, 0)));
   -webkit-backdrop-filter: blur(var(--g-blur)) saturate(160%);
   backdrop-filter: blur(var(--g-blur)) saturate(160%);
   box-shadow: inset 0 1px 1px rgb(255 255 255 / var(--g-edge)), 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -181,3 +184,9 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 /* اندازهٔ برنامه روی گوشی */
 html.ui-zoomed #root { zoom: var(--ui-zoom); }
+
+/* در حالت روشن تیره‌کردن شیشه نصف اثر دارد تا نوشته‌ها خوانا بمانند */
+.theme-light .yg-glass,
+.theme-light .yg-glass-bar {
+  background-image: linear-gradient(rgb(0 0 0 / calc(var(--g-dark, 0) * 0.5)), rgb(0 0 0 / calc(var(--g-dark, 0) * 0.5)));
+}

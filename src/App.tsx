@@ -61,13 +61,14 @@ export default function App() {
   };
 
   // اعمال تنظیمات شیشه روی کل برنامه
-  const { glassBlur, glassTint, glassEdge } = store.settings;
+  const { glassBlur, glassTint, glassEdge, glassDark } = store.settings;
   React.useEffect(() => {
     const r = document.documentElement.style;
     r.setProperty("--g-blur", `${glassBlur}px`);
     r.setProperty("--g-tint", String(glassTint / 100));
     r.setProperty("--g-edge", String(glassEdge / 100));
-  }, [glassBlur, glassTint, glassEdge]);
+    r.setProperty("--g-dark", String((glassDark ?? 0) / 100));
+  }, [glassBlur, glassTint, glassEdge, glassDark]);
 
   // حالت رنگ روشن/تیره
   const light = isLightTheme(store.settings);

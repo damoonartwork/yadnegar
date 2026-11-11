@@ -292,7 +292,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
         title="شیشه و پس‌زمینه"
         action={
           <button
-            onClick={() => set({ glassBlur: DEFAULT_SETTINGS.glassBlur, glassTint: DEFAULT_SETTINGS.glassTint, glassEdge: DEFAULT_SETTINGS.glassEdge })}
+            onClick={() => set({ glassBlur: DEFAULT_SETTINGS.glassBlur, glassTint: DEFAULT_SETTINGS.glassTint, glassEdge: DEFAULT_SETTINGS.glassEdge, glassDark: DEFAULT_SETTINGS.glassDark })}
             className="flex items-center gap-1 text-[11px] text-white/45 hover:text-white"
           >
             <RotateCcw className="h-3 w-3" />
@@ -302,6 +302,7 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
       >
         <Group>
           <Slider label="تاری پشت شیشه" value={settings.glassBlur} min={0} max={60} unit=" px" onChange={(v) => set({ glassBlur: v })} />
+          <Slider label="تیره‌کردن شیشه‌ها" value={settings.glassDark ?? 0} min={0} max={80} unit="٪" onChange={(v) => set({ glassDark: v })} />
           <Slider label="رنگ و مات بودن" value={settings.glassTint} min={0} max={30} unit="٪" onChange={(v) => set({ glassTint: v })} />
           <Slider label="درخشش لبه‌ها" value={settings.glassEdge} min={0} max={100} unit="٪" onChange={(v) => set({ glassEdge: v })} />
           <Slider label="تیره‌کردن پس‌زمینه" value={settings.bgDim} min={0} max={80} unit="٪" onChange={(v) => set({ bgDim: v })} />

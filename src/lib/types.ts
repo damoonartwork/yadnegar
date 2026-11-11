@@ -26,6 +26,8 @@ export interface Settings {
   closeToTray: boolean;
   /** میزان تاری پشت شیشه (px) */
   glassBlur: number;
+  /** تیره‌کردن خود شیشه‌ها (۰ تا ۸۰٪)، جدا از پس‌زمینه */
+  glassDark: number;
   /** رنگ/مات بودن شیشه (۰ تا ۳۰ درصد سفیدی) */
   glassTint: number;
   /** درخشش لبهٔ شیشه (۰ تا ۱۰۰) */
@@ -61,6 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoStart: true,
   closeToTray: true,
   glassBlur: 24,
+  glassDark: 0,
   glassTint: 6,
   glassEdge: 35,
   background: "glow",

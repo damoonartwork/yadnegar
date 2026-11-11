@@ -12,6 +12,7 @@ export const SHARED_SETTING_KEYS = [
   "background",
   "glassBlur",
   "glassTint",
+  "glassDark",
   "glassEdge",
   "bgDim",
 ] as const satisfies readonly (keyof Settings)[];
