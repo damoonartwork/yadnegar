@@ -131,14 +131,22 @@ export function TaskItem({ task, index, draggable, touch, onDragEnd, showDate, o
         )}
       </span>
 
+      {/* محدودهٔ تیک بزرگ‌تر از خود دایره است و کشیدن کار را شروع نمی‌کند */}
       <button
         onClick={onToggle}
-        className={cn(
-          "grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-all",
-          task.done ? "border-transparent bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.35)]" : "border-white/30 hover:border-white/70"
-        )}
+        title={task.done ? "برگرداندن" : "انجام شد"}
+        className="group/check -my-2 -mx-1.5 grid shrink-0 cursor-pointer place-items-center self-stretch px-1.5 py-2"
       >
-        {task.done && <Check className="h-3 w-3" strokeWidth={3} />}
+        <span
+          className={cn(
+            "grid h-5 w-5 place-items-center rounded-full border-2 transition-all",
+            task.done
+              ? "border-transparent bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.35)]"
+              : "border-white/30 group-hover/check:scale-110 group-hover/check:border-white/80"
+          )}
+        >
+          {task.done && <Check className="h-3 w-3" strokeWidth={3} />}
+        </span>
       </button>
 
       <div className="min-w-0 flex-1" onDoubleClick={startEdit} onClick={touch && !editing ? startEdit : undefined}>
@@ -189,7 +197,7 @@ export function TaskItem({ task, index, draggable, touch, onDragEnd, showDate, o
       </div>
 
       {!editing && (
-        <div className="flex items-center gap-0.5">
+        <div className="flex cursor-default items-center gap-0.5" data-no-drag>
           {!touch && (
             <>
               <button
@@ -229,8 +237,14 @@ export function TaskItem({ task, index, draggable, touch, onDragEnd, showDate, o
         ref={liRef}
         as="li"
         value={task}
-        dragListener={!touch && !!draggable && !editing}
+        dragListener={false}
         dragControls={dragControls}
+        onPointerDown={(e) => {
+          // کشیدن از هر جای کارت، به‌جز دکمه‌ها (تیک، ستاره، …) و کادرهای متن
+          if (touch || !draggable || editing) return;
+          if ((e.target as Element).closest("button, input, a, [data-no-drag]")) return;
+          dragControls.start(e);
+        }}
         onDragStart={() => {
           if (touch) void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
           window.clearTimeout(landTimer.current);
