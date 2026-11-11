@@ -95,7 +95,7 @@ export function PersianTimePicker({ value, onChange, compact, className }: Persi
         <AnimatePresence>
           {open && (
             <>
-              <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
+              <div data-yg-popover className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
               <motion.div
                 dir="rtl"
                 initial={{ opacity: 0, scale: 0.96 }}
@@ -103,6 +103,7 @@ export function PersianTimePicker({ value, onChange, compact, className }: Persi
                 exit={{ opacity: 0, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
                 style={{ top: pos.top, right: pos.right, width: POP_W }}
+                data-yg-popover
                 className="fixed z-[61] rounded-3xl border border-white/10 yg-panel p-4 text-white backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_20px_50px_rgba(0,0,0,0.6)]"
               >
                 {/* نمایش ساعت انتخاب‌شده */}

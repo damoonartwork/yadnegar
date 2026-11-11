@@ -52,6 +52,16 @@ export function GregorianCard({ zone, onZoneChange, className }: Props) {
   const time = fmt({ hour: "numeric", minute: "2-digit", hour12: true });
   const [clock, ampm] = time.split(" ");
   const date = fmt({ weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  // همان تاریخ میلادی با نوشتهٔ فارسی: «چهارشنبه ۱۱ نوامبر ۲۰۲۶»
+  const faDate = new Intl.DateTimeFormat("fa-IR-u-ca-gregory-nu-arabext", {
+    timeZone: safeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+    .format(now)
+    .replace(/،/g, "");
   const shortCity = current.city?.split(" / ")[0];
 
   const list = React.useMemo(() => {
@@ -95,6 +105,7 @@ export function GregorianCard({ zone, onZoneChange, className }: Props) {
         <div dir="ltr" className="mt-0.5 truncate px-1.5 font-sans text-[15px] font-semibold text-white/90">
           {date}
         </div>
+        <div className="truncate px-1.5 text-left text-[11.5px] text-white/50">{faDate}</div>
       </div>
 
       {createPortal(

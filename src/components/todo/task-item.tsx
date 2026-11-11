@@ -72,9 +72,25 @@ export function TaskItem({ task, index, draggable, touch, onDragEnd, showDate, o
 
   const save = () => {
     const t = title.trim();
-    if (t) onEdit({ title: t, ...(time !== (task.time ?? "") ? { time: time || undefined } : {}) });
+    const changed = t !== task.title || time !== (task.time ?? "");
+    if (t && changed) onEdit({ title: t, ...(time !== (task.time ?? "") ? { time: time || undefined } : {}) });
     setEditing(false);
   };
+
+  // کلیک بیرون از کادر ویرایش = ثبت (به‌جز کلیک داخل پنجرهٔ انتخاب ساعت)
+  const editRef = React.useRef<HTMLDivElement>(null);
+  const saveRef = React.useRef(save);
+  saveRef.current = save;
+  React.useEffect(() => {
+    if (!editing) return;
+    const onDown = (e: PointerEvent) => {
+      const el = e.target as Element | null;
+      if (!el || editRef.current?.contains(el) || el.closest("[data-yg-popover]")) return;
+      saveRef.current();
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [editing]);
 
   const content = (glow: boolean, handle = false) => (
     <>
@@ -127,7 +143,7 @@ export function TaskItem({ task, index, draggable, touch, onDragEnd, showDate, o
 
       <div className="min-w-0 flex-1" onDoubleClick={startEdit} onClick={touch && !editing ? startEdit : undefined}>
         {editing ? (
-          <div className="flex items-center gap-2">
+          <div ref={editRef} className="flex items-center gap-2">
             <input
               autoFocus
               value={title}

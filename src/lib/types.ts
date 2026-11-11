@@ -49,8 +49,10 @@ export interface Settings {
   quickNote: string;
   /** منطقهٔ زمانی کارت ساعت میلادی (IANA) */
   worldZone: string;
-  /** اندازهٔ کل برنامه (فقط ویندوز) */
+  /** اندازهٔ کل برنامه */
   uiScale?: UiScale;
+  /** ترتیب بخش‌های هر ستون در نسخهٔ ویندوز */
+  layout?: { left: string[]; right: string[] };
 }
 
 export type UiScale = "small" | "medium" | "large";

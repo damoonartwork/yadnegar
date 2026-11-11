@@ -16,6 +16,7 @@ import { VoiceDialog } from "@/components/todo/voice-dialog";
 import { useTasks } from "@/hooks/use-tasks";
 import { useSync } from "@/hooks/use-sync";
 import { Backdrop, imageIsLight, isLightTheme } from "@/components/todo/backdrop";
+import { LayoutBlock, LayoutEditBar, normalizeLayout, DEFAULT_LAYOUT, type BlockId } from "@/components/todo/layout-editor";
 
 /** موبایل: اپ اندروید یا پنجرهٔ باریک */
 function useIsMobile() {
@@ -38,6 +39,7 @@ export default function App() {
   const [filter, setFilter] = React.useState<Filter>("day");
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [voiceOpen, setVoiceOpen] = React.useState(false);
+  const [editLayout, setEditLayout] = React.useState(false);
   const addRef = React.useRef<AddTaskHandle>(null);
 
   const mobile = useIsMobile();
@@ -149,6 +151,55 @@ export default function App() {
     </>
   );
 
+  const layout = normalizeLayout(store.settings.layout);
+  const moveBlock = (col: "left" | "right", i: number, dir: -1 | 1) =>
+    store.setSettings((s) => {
+      const cur = normalizeLayout(s.layout);
+      const list = [...cur[col]];
+      const j = i + dir;
+      if (j < 0 || j >= list.length) return s;
+      [list[i], list[j]] = [list[j], list[i]];
+      return { ...s, layout: { ...cur, [col]: list } };
+    });
+
+  const blocks: Record<BlockId, React.ReactNode> = {
+    clock: <ClockCard tasks={tasks} className="h-full" />,
+    gregorian: (
+      <GregorianCard
+        className="h-full"
+        zone={store.settings.worldZone}
+        onZoneChange={(z) => store.setSettings((s) => ({ ...s, worldZone: z }))}
+      />
+    ),
+    calendar: (
+      <Glass contentClassName="p-4">
+        <GlassCalendar
+          variant="bare"
+          defaultView="monthly"
+          showFooter={false}
+          compact
+          selectedDate={selected}
+          onDateSelect={pickDate}
+          marks={marks}
+        />
+      </Glass>
+    ),
+    notes: (
+      <NotesCard
+        className="h-full min-h-0"
+        tasks={tasks}
+        note={store.settings.quickNote}
+        onNoteChange={(v) => store.setSettings((s) => ({ ...s, quickNote: v }))}
+      />
+    ),
+    upcoming: <UpcomingStrip tasks={tasks} onPick={pickDate} className="h-full min-w-0" />,
+    tasks: (
+      <Glass className="h-full min-h-0" contentClassName="flex h-full flex-col p-6">
+        <TaskPanel store={store} selected={selected} filter={filter} setFilter={setFilter} addRef={addRef} />
+      </Glass>
+    ),
+  };
+
   if (mobile) {
     return (
       <>
@@ -173,43 +224,35 @@ export default function App() {
   return (
     <div dir="rtl" className="flex h-full flex-col">
       <Backdrop settings={store.settings} />
-      <TitleBar onSettings={() => setSettingsOpen(true)} />
+      <TitleBar onSettings={() => setSettingsOpen(true)} onLayout={() => setEditLayout((v) => !v)} layoutActive={editLayout} />
 
-      {/* شبکهٔ ۲×۲: کارت‌های هر ردیف هم‌ارتفاع و هر ستون هم‌عرض هستند */}
-      <main className="grid min-h-0 flex-1 grid-cols-[340px_1fr] grid-rows-[156px_88px_auto_minmax(0,1fr)] gap-5 px-6 pt-2 pb-6">
-        <ClockCard tasks={tasks} className="col-start-1 row-start-1 h-full" />
-        <UpcomingStrip tasks={tasks} onPick={pickDate} className="col-start-2 row-start-1 h-full min-w-0" />
-        <GregorianCard
-          className="col-start-1 row-start-2 h-full"
-          zone={store.settings.worldZone}
-          onZoneChange={(z) => store.setSettings((s) => ({ ...s, worldZone: z }))}
-        />
-
-        <Glass className="col-start-1 row-start-3" contentClassName="p-4">
-          <GlassCalendar
-            variant="bare"
-            defaultView="monthly"
-            showFooter={false}
-            compact
-            selectedDate={selected}
-            onDateSelect={pickDate}
-            marks={marks}
-          />
-        </Glass>
-
-        <NotesCard
-          className="col-start-1 row-start-4 h-full min-h-0"
-          tasks={tasks}
-          note={store.settings.quickNote}
-          onNoteChange={(v) => store.setSettings((s) => ({ ...s, quickNote: v }))}
-        />
-
-        <section className="col-start-2 row-span-3 row-start-2 flex min-h-0 min-w-0 flex-col">
-          <Glass className="min-h-0 flex-1" contentClassName="flex h-full flex-col p-6">
-            <TaskPanel store={store} selected={selected} filter={filter} setFilter={setFilter} addRef={addRef} />
-          </Glass>
-        </section>
+      {/* دو ستون؛ ترتیب بخش‌های هر ستون قابل تغییر است */}
+      <main className="flex min-h-0 flex-1 gap-5 px-6 pt-2 pb-6">
+        {(["left", "right"] as const).map((col) => {
+          const order = layout[col];
+          return (
+            <div key={col} className={col === "left" ? "flex min-h-0 w-[340px] shrink-0 flex-col gap-5" : "flex min-h-0 min-w-0 flex-1 flex-col gap-5"}>
+              {order.map((id, i) => (
+                <LayoutBlock
+                  key={id}
+                  id={id}
+                  editing={editLayout}
+                  canUp={i > 0}
+                  canDown={i < order.length - 1}
+                  onMove={(dir) => moveBlock(col, i, dir)}
+                >
+                  {blocks[id]}
+                </LayoutBlock>
+              ))}
+            </div>
+          );
+        })}
       </main>
+      <LayoutEditBar
+        open={editLayout}
+        onReset={() => store.setSettings((s) => ({ ...s, layout: DEFAULT_LAYOUT }))}
+        onDone={() => setEditLayout(false)}
+      />
 
       {overlays}
     </div>
