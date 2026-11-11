@@ -1,10 +1,10 @@
-import { Copy, LayoutGrid, Minus, Pin, Settings, Square, X } from "lucide-react";
+import { Copy, Minus, Pin, Settings, Square, X } from "lucide-react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useUpdate } from "@/hooks/use-update";
 
 /** نوار عنوان سفارشی به سبک ویندوز؛ دکمه‌ها مثل ویندوز فارسی سمت چپ هستند */
-export function TitleBar({ onSettings, onLayout, layoutActive }: { onSettings?: () => void; onLayout?: () => void; layoutActive?: boolean }) {
+export function TitleBar({ onSettings }: { onSettings?: () => void }) {
   const api = window.yadnegar;
   const [pinned, setPinned] = React.useState(false);
   const [maximized, setMaximized] = React.useState(false);
@@ -28,11 +28,6 @@ export function TitleBar({ onSettings, onLayout, layoutActive }: { onSettings?: 
             className="ml-2 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-black shadow-[0_0_14px_rgba(255,255,255,0.35)] hover:bg-white/90"
           >
             {status.state === "ready" ? "به‌روزرسانی آماده نصب است" : "نسخهٔ جدید آمده"}
-          </button>
-        )}
-        {onLayout && (
-          <button title="جابه‌جایی بخش‌ها" onClick={onLayout} className={cn(btn, layoutActive && "bg-white/10 text-white")}>
-            <LayoutGrid className="h-4 w-4" />
           </button>
         )}
         {onSettings && (

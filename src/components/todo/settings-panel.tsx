@@ -404,6 +404,16 @@ export function SettingsPanel({ open, onClose, settings, onChange, isDesktop, sy
             <Row title="با بستن، کنار ساعت بماند" hint="برنامه در System Tray فعال می‌ماند">
               <Toggle checked={settings.closeToTray} onChange={(v) => set({ closeToTray: v })} />
             </Row>
+            <Row title="چیدمان کادرها" hint="برای جابه‌جایی، نوار بالای هر کادر را نگه دار و بکش">
+              <button
+                onClick={() => set({ layout: undefined })}
+                disabled={!settings.layout}
+                className="flex shrink-0 items-center gap-1 text-[11px] font-semibold text-white/60 hover:text-white disabled:opacity-30"
+              >
+                <RotateCcw className="h-3 w-3" />
+                پیش‌فرض
+              </button>
+            </Row>
           </Group>
         </Section>
       )}

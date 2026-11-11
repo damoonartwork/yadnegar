@@ -16,7 +16,7 @@ import { VoiceDialog } from "@/components/todo/voice-dialog";
 import { useTasks } from "@/hooks/use-tasks";
 import { useSync } from "@/hooks/use-sync";
 import { Backdrop, imageIsLight, isLightTheme } from "@/components/todo/backdrop";
-import { LayoutBlock, LayoutEditBar, normalizeLayout, DEFAULT_LAYOUT, type BlockId } from "@/components/todo/layout-editor";
+import { LayoutColumn, normalizeLayout, type BlockId } from "@/components/todo/layout-editor";
 
 /** موبایل: اپ اندروید یا پنجرهٔ باریک */
 function useIsMobile() {
@@ -39,7 +39,6 @@ export default function App() {
   const [filter, setFilter] = React.useState<Filter>("day");
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [voiceOpen, setVoiceOpen] = React.useState(false);
-  const [editLayout, setEditLayout] = React.useState(false);
   const addRef = React.useRef<AddTaskHandle>(null);
 
   const mobile = useIsMobile();
@@ -152,15 +151,6 @@ export default function App() {
   );
 
   const layout = normalizeLayout(store.settings.layout);
-  const moveBlock = (col: "left" | "right", i: number, dir: -1 | 1) =>
-    store.setSettings((s) => {
-      const cur = normalizeLayout(s.layout);
-      const list = [...cur[col]];
-      const j = i + dir;
-      if (j < 0 || j >= list.length) return s;
-      [list[i], list[j]] = [list[j], list[i]];
-      return { ...s, layout: { ...cur, [col]: list } };
-    });
 
   const blocks: Record<BlockId, React.ReactNode> = {
     clock: <ClockCard tasks={tasks} className="h-full" />,
@@ -224,35 +214,20 @@ export default function App() {
   return (
     <div dir="rtl" className="flex h-full flex-col">
       <Backdrop settings={store.settings} />
-      <TitleBar onSettings={() => setSettingsOpen(true)} onLayout={() => setEditLayout((v) => !v)} layoutActive={editLayout} />
+      <TitleBar onSettings={() => setSettingsOpen(true)} />
 
       {/* دو ستون؛ ترتیب بخش‌های هر ستون قابل تغییر است */}
       <main className="flex min-h-0 flex-1 gap-5 px-6 pt-2 pb-6">
-        {(["left", "right"] as const).map((col) => {
-          const order = layout[col];
-          return (
-            <div key={col} className={col === "left" ? "flex min-h-0 w-[340px] shrink-0 flex-col gap-5" : "flex min-h-0 min-w-0 flex-1 flex-col gap-5"}>
-              {order.map((id, i) => (
-                <LayoutBlock
-                  key={id}
-                  id={id}
-                  editing={editLayout}
-                  canUp={i > 0}
-                  canDown={i < order.length - 1}
-                  onMove={(dir) => moveBlock(col, i, dir)}
-                >
-                  {blocks[id]}
-                </LayoutBlock>
-              ))}
-            </div>
-          );
-        })}
+        {(["left", "right"] as const).map((col) => (
+          <LayoutColumn
+            key={col}
+            order={layout[col]}
+            blocks={blocks}
+            onCommit={(next) => store.setSettings((s) => ({ ...s, layout: { ...normalizeLayout(s.layout), [col]: next } }))}
+            className={col === "left" ? "flex min-h-0 w-[340px] shrink-0 flex-col gap-5" : "flex min-h-0 min-w-0 flex-1 flex-col gap-5"}
+          />
+        ))}
       </main>
-      <LayoutEditBar
-        open={editLayout}
-        onReset={() => store.setSettings((s) => ({ ...s, layout: DEFAULT_LAYOUT }))}
-        onDone={() => setEditLayout(false)}
-      />
 
       {overlays}
     </div>

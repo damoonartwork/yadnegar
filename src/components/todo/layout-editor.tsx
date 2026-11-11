@@ -1,6 +1,5 @@
 import * as React from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ArrowDown, ArrowUp, Check, LayoutGrid, RotateCcw } from "lucide-react";
+import { Reorder, useDragControls } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export type BlockId = "clock" | "gregorian" | "calendar" | "notes" | "upcoming" | "tasks";
@@ -8,15 +7,6 @@ export type BlockId = "clock" | "gregorian" | "calendar" | "notes" | "upcoming" 
 export const DEFAULT_LAYOUT: { left: BlockId[]; right: BlockId[] } = {
   left: ["clock", "gregorian", "calendar", "notes"],
   right: ["upcoming", "tasks"],
-};
-
-const LABELS: Record<BlockId, string> = {
-  clock: "ساعت و تاریخ شمسی",
-  gregorian: "ساعت و تاریخ میلادی",
-  calendar: "تقویم",
-  notes: "یادداشت و آمار",
-  upcoming: "یادآوری‌های پیش رو",
-  tasks: "کارها",
 };
 
 /** اندازهٔ هر بخش داخل ستون: بعضی ثابت، بعضی فضای باقی‌مانده را پر می‌کنند */
@@ -39,82 +29,83 @@ export function normalizeLayout(raw?: { left?: string[]; right?: string[] }): { 
   return { left: ok("left"), right: ok("right") };
 }
 
-export function LayoutBlock({
-  id,
-  editing,
-  canUp,
-  canDown,
-  onMove,
-  children,
-}: {
-  id: BlockId;
-  editing: boolean;
-  canUp: boolean;
-  canDown: boolean;
-  onMove: (dir: -1 | 1) => void;
-  children: React.ReactNode;
-}) {
-  const arrow =
-    "grid h-8 w-8 place-items-center rounded-full bg-white text-black shadow-md transition-transform hover:scale-105 disabled:pointer-events-none disabled:opacity-25";
+function Block({ id, onDragEnd, children }: { id: BlockId; onDragEnd: () => void; children: React.ReactNode }) {
+  const controls = useDragControls();
+  const [dragging, setDragging] = React.useState(false);
   return (
-    <motion.div
-      layout
-      transition={{ type: "spring", damping: 30, stiffness: 320 }}
-      className={cn("relative flex min-h-0 flex-col", SIZE[id])}
+    <Reorder.Item
+      as="div"
+      value={id}
+      dragListener={false}
+      dragControls={controls}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={() => {
+        setDragging(false);
+        onDragEnd();
+      }}
+      layout="position"
+      transition={{ type: "spring", damping: 32, stiffness: 380 }}
+      whileDrag={{ scale: 1.025 }}
+      style={{ zIndex: dragging ? 30 : 0 }}
+      className={cn(
+        "group/block relative flex min-h-0 flex-col rounded-[24px]",
+        SIZE[id],
+        dragging && "shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+      )}
     >
-      <div className={cn("flex min-h-0 flex-1 flex-col transition-opacity", editing && "pointer-events-none opacity-45")}>{children}</div>
-      <AnimatePresence>
-        {editing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-white/40"
-          >
-            <button className={arrow} disabled={!canUp} onClick={() => onMove(-1)} title="بالا">
-              <ArrowUp className="h-4 w-4" />
-            </button>
-            <span className="rounded-full bg-black/60 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-md">{LABELS[id]}</span>
-            <button className={arrow} disabled={!canDown} onClick={() => onMove(1)} title="پایین">
-              <ArrowDown className="h-4 w-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      {children}
+      {/* دستگیرهٔ جابه‌جایی: بالای هر کادر؛ نگه دار و بکش */}
+      <div
+        onPointerDown={(e) => {
+          e.preventDefault();
+          controls.start(e);
+        }}
+        title="برای جابه‌جایی نگه دار و بکش"
+        style={{ touchAction: "none" }}
+        className="absolute inset-x-0 top-0 z-[40] flex h-4 cursor-grab justify-center active:cursor-grabbing"
+      >
+        <span
+          className={cn(
+            "mt-1.5 h-1 w-10 rounded-full bg-white/10 transition-all duration-200 group-hover/block:bg-white/35",
+            dragging && "w-14 bg-white/80"
+          )}
+        />
+      </div>
+    </Reorder.Item>
   );
 }
 
-export function LayoutEditBar({ open, onReset, onDone }: { open: boolean; onReset: () => void; onDone: () => void }) {
-  React.useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onDone();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onDone]);
+/** یک ستون از کادرها که با کشیدن دستگیرهٔ بالای هر کادر مرتب می‌شود */
+export function LayoutColumn({
+  order,
+  onCommit,
+  blocks,
+  className,
+}: {
+  order: BlockId[];
+  onCommit: (next: BlockId[]) => void;
+  blocks: Record<BlockId, React.ReactNode>;
+  className?: string;
+}) {
+  const [items, setItems] = React.useState(order);
+  const itemsRef = React.useRef(items);
+  itemsRef.current = items;
+  const key = order.join(",");
+  React.useEffect(() => setItems(order), [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 16 }}
-          className="fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 yg-panel py-1.5 pr-4 pl-1.5 text-white backdrop-blur-2xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_40px_rgba(0,0,0,0.5)]"
+    <Reorder.Group as="div" axis="y" values={items} onReorder={setItems} className={className}>
+      {items.map((id) => (
+        <Block
+          key={id}
+          id={id}
+          onDragEnd={() => {
+            if (itemsRef.current.join(",") !== key) onCommit(itemsRef.current);
+          }}
         >
-          <LayoutGrid className="h-4 w-4 text-white/60" />
-          <span className="text-xs font-semibold text-white/75">با فلش‌ها جای هر بخش را با بالایی یا پایینی‌اش عوض کن</span>
-          <button onClick={onReset} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/60 hover:bg-white/[0.08] hover:text-white">
-            <RotateCcw className="h-3.5 w-3.5" />
-            پیش‌فرض
-          </button>
-          <button onClick={onDone} className="flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-black">
-            <Check className="h-3.5 w-3.5" />
-            تمام
-          </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          {blocks[id]}
+        </Block>
+      ))}
+    </Reorder.Group>
   );
 }
